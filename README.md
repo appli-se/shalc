@@ -5,6 +5,8 @@ A small experiment implementing a HAL (Hypothetical Assembly Language) parser an
 ## Usage
 
 1. Place your `.hal` source files anywhere in the project. A sample file is provided at `hal/sample.hal`.
+   Another file `hal/sample_external.hal` demonstrates declarations of external
+   functions and procedures.
 2. Run the compiler with Node.js, passing the path to the `.hal` file:
 
 ```bash
