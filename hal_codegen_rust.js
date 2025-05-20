@@ -71,7 +71,7 @@ function defaultValueRust(halType) {
 
 function genFunction(fn) {
     const params = fn.params.map(
-        p => `${p.name}: ${rustType(p.type)}`
+        p => `${p.modifiers && p.modifiers.includes("VAR_KEYWORD") ? "mut " : ""}${p.name}: ${rustType(p.type)}`
     ).join(", ");
     const retType = rustType(fn.returnType) || "i32";
     const pub = fn.modifiers && fn.modifiers.includes("GLOBAL_KEYWORD") ? "pub " : "";
@@ -80,7 +80,7 @@ function genFunction(fn) {
 
 function genProcedure(proc) {
     const params = proc.params.map(
-        p => `${p.name}: ${rustType(p.type)}`
+        p => `${p.modifiers && p.modifiers.includes("VAR_KEYWORD") ? "mut " : ""}${p.name}: ${rustType(p.type)}`
     ).join(", ");
     const pub = proc.modifiers && proc.modifiers.includes("GLOBAL_KEYWORD") ? "pub " : "";
     return `${pub}fn ${proc.name}(${params}) {\n${indent(genBlock(proc.body, proc.params.map(p => p.name)))}\n}`;
