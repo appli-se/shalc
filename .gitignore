@@ -1,0 +1,2 @@
+# Ignore generated Rust files
+hal/*.rs
