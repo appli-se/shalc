@@ -1,0 +1,13 @@
+global
+function integer foo(integer x, integer y)
+begin
+    integer z;
+    z = x + y;
+    return z;
+end;
+
+procedure bar(integer a)
+begin
+    integer b;
+    b = a + 1;
+end;
