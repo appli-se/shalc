@@ -1,7 +1,7 @@
 // hal_codegen.js
 
 function genRust(ast) {
-    let out = [];
+    let out = ["mod hal { type RoundMode = (); }"];
     for (const item of ast.items) {
         if (item.type === "Function") {
             out.push(genFunction(item));
@@ -18,6 +18,7 @@ function rustType(halType) {
         case "longint": return "i64";
         case "boolean": return "bool";
         case "string":  return "String";
+        case "roundmode": return "hal::RoundMode";
         default: return "/* unknown: " + halType + " */";
     }
 }
@@ -52,6 +53,7 @@ function defaultValueRust(halType) {
         case "longint":  return "0";
         case "boolean":  return "false";
         case "string":   return "String::new()";
+        case "roundmode": return "Default::default()";
         default:         return "Default::default()";
     }
 }

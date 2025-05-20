@@ -13,7 +13,7 @@ const tokenSpecs = [
     ].map(kw => ({ type: kw.toUpperCase() + "_KEYWORD", regex: new RegExp("^" + kw + "\\b", "i") })),
     // Types
     ...[
-      "area", "boolean", "integer", "longint", "string", "val", "ulong64", "date", "time"
+      "area", "boolean", "integer", "longint", "string", "val", "ulong64", "date", "time", "roundmode"
     ].map(kw => ({ type: kw.toUpperCase() + "_TYPE", regex: new RegExp("^" + kw + "\\b", "i") })),
     // Literals
     { type: "STRING_LITERAL", regex: /^('(?:\\.|''|[^'\\])*'|"(?:\\.|""|[^"\\])*")/ },
