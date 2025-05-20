@@ -1,10 +1,31 @@
 // hal_parser.js
+// based on:
+// https://gitlab.appli.se/appli/playground/intellij-hal/-/blob/master/src/main/grammar/HAL.bnf?ref_type=heads
 const { lex } = require('./hal_lexer');
 
 class ParseError extends Error {
     constructor(message, token) {
         super(`${message} at line ${token.line}, column ${token.col}`);
         this.token = token;
+    }
+}
+
+// A classic lexical symbol table (block-scoped)
+class SymbolTable {
+    constructor(parent = null) {
+        this.parent = parent;
+        this.table = new Map();
+    }
+    declare(name, info) {
+        if (this.table.has(name)) {
+            throw new Error(`Variable '${name}' is already declared in this scope`);
+        }
+        this.table.set(name, info);
+    }
+    lookup(name) {
+        if (this.table.has(name)) return this.table.get(name);
+        if (this.parent) return this.parent.lookup(name);
+        return null;
     }
 }
 
@@ -33,139 +54,179 @@ class Parser {
         }
         return null;
     }
-    // Program ::= (subprogram | data_structure | ...)*
+
+    isTypeToken(token) {
+        return (
+            token.type.endsWith('_TYPE') ||
+            token.type === 'TIME_KEYWORD' ||
+            token.type === 'ROW_KEYWORD' ||
+            token.type === 'RECORD_KEYWORD'
+        );
+    }
+
     parseProgram() {
         const items = [];
         while (this.peek().type !== "EOF") {
-            if (this.peek().type === "FUNCTION_KEYWORD") {
-                items.push(this.parseFunction());
-            } else if (this.peek().type === "PROCEDURE_KEYWORD") {
-                items.push(this.parseProcedure());
-            } else {
-                // TODO: Add more parse entry points
-                this.pos++; // skip unknown
-            }
+            const item = this.parseItem();
+            if (item) items.push(item);
         }
         return { type: "Program", items };
     }
-    parseFunction() {
+
+    parseItem() {
+        // Collect all leading modifiers (as long as they are allowed keywords)
+        const modifiers = [];
+        while (["GLOBAL_KEYWORD", "EXTERNAL_KEYWORD", "UPDATING_KEYWORD", "INNER_KEYWORD", "REMOTE_KEYWORD", "OUTER_KEYWORD"].includes(this.peek().type)) {
+            modifiers.push(this.expect(this.peek().type).type);
+        }
+        // After modifiers, expect a function or procedure
+        if (this.peek().type === "FUNCTION_KEYWORD") {
+            return this.parseFunction(modifiers);
+        } else if (this.peek().type === "PROCEDURE_KEYWORD") {
+            return this.parseProcedure(modifiers);
+        } else {
+            // Not a recognized declaration, skip or throw (based on your error handling policy)
+            this.pos++;
+            return null;
+        }
+    }
+
+    parseFunction(modifiers = []) {
         this.expect("FUNCTION_KEYWORD");
         let typeToken = this.peek();
-        // Only accept explicit type tokens (INTEGER_TYPE, STRING_TYPE, etc.)
-        if (!typeToken.type.endsWith("_TYPE") && typeToken.type !== "TIME_KEYWORD" && typeToken.type !== "ROW_KEYWORD" && typeToken.type !== "RECORD_KEYWORD") {
+        if (!this.isTypeToken(typeToken)) {
             throw new ParseError(
                 `Expected type after 'function', but got ${typeToken.type} ('${typeToken.value}')`,
                 typeToken
             );
         }
-        let type = this.expect(typeToken.type).value;
+        let returnType = this.expect(typeToken.type).value;
         let nameToken = this.expect("IDENTIFIER");
         let name = nameToken.value;
         this.expect("LPAREN");
-        const params = this.parseParamList();
+        let params = this.parseParamList();
         this.expect("RPAREN");
-        const body = this.parseBlock();
-        return {
-            type: "Function",
-            name,
-            returnType: type,
-            params,
-            body,
-            span: {
-                start: { line: typeToken.line, col: typeToken.col },
-                end: { line: body.span?.end.line || body.endLine, col: body.span?.end.col || body.endCol }
-            }
-        };
+        let body = this.parseBlock(params.map(p => p.name));
+        return { type: "Function", name, returnType, params, body, modifiers };
     }
-    parseProcedure() {
+
+    parseProcedure(modifiers = []) {
         this.expect("PROCEDURE_KEYWORD");
-        const name = this.expect("IDENTIFIER").value;
+        let nameToken = this.expect("IDENTIFIER");
+        let name = nameToken.value;
         this.expect("LPAREN");
-        const params = this.parseParamList();
+        let params = this.parseParamList();
         this.expect("RPAREN");
-        const body = this.parseBlock();
-        return { type: "Procedure", name, params, body };
+        let body = this.parseBlock(params.map(p => p.name));
+        return { type: "Procedure", name, params, body, modifiers };
     }
+
     parseParamList() {
         const params = [];
         while (
             this.peek().type !== "RPAREN" &&
             this.peek().type !== "EOF"
         ) {
-            // type then name
-            let typeTok = this.peek();
-            if (
-                typeTok.type.endsWith("_TYPE") ||
-                typeTok.type === "IDENTIFIER"
-            ) {
-                let type = this.expect(typeTok.type).value;
-                let nameTok = this.expect("IDENTIFIER");
-                params.push({
-                    type,
-                    name: nameTok.value,
-                    span: {
-                        start: { line: typeTok.line, col: typeTok.col },
-                        end: { line: nameTok.endLine, col: nameTok.endCol }
-                    }
-                });
-            } else {
-                // Unknown type: helpful error
+            let typeToken = this.peek();
+            if (!this.isTypeToken(typeToken)) {
                 throw new ParseError(
-                    `Unknown type: ${typeTok.value}`,
-                    typeTok
+                    `Expected parameter type, but got ${typeToken.type} ('${typeToken.value}')`,
+                    typeToken
                 );
             }
+            let type = this.expect(typeToken.type).value;
+            let nameToken = this.expect("IDENTIFIER");
+            let name = nameToken.value;
+            params.push({ type, name });
             if (!this.accept("COMMA")) break;
         }
         return params;
     }
-    parseBlock() {
+
+    parseBlock(paramNames = []) {
         this.expect("BEGIN_KEYWORD");
+        const symbolTable = new SymbolTable();
+        // Parameters are "declared" in the symbol table
+        for (let name of paramNames) {
+            symbolTable.declare(name, { halType: "parameter" });
+        }
         let statements = [];
         while (this.peek().type !== "END_KEYWORD" && this.peek().type !== "EOF") {
-            statements.push(this.parseStatement());
+            let stmt = this.parseStatementWithSymbols(symbolTable);
+            statements.push(stmt);
         }
         this.expect("END_KEYWORD");
         this.accept("SEMICOLON");
-        return { type: "Block", statements };
-    }
-    parseStatement() {
-        // Simple assignment/return/expression
-        if (this.peek().type === "IDENTIFIER" && this.peek(1).type === "EQUALS") {
-            let left = this.expect("IDENTIFIER").value;
-            this.expect("EQUALS");
-            let expr = this.parseExpression();
-            this.accept("SEMICOLON");
-            return { type: "Assignment", left, expr };
-        } else if (this.peek().type === "RETURN_KEYWORD") {
-            this.expect("RETURN_KEYWORD");
-            let expr = this.parseExpression();
-            this.accept("SEMICOLON");
-            return { type: "Return", expr };
-        } else {
-            let expr = this.parseExpression();
-            this.accept("SEMICOLON");
-            return { type: "ExpressionStatement", expr };
-        }
-    }
-    parseExpression() {
-        return this.parseAdditive();
+        return { type: "Block", statements, symbolTable };
     }
 
-    parseAdditive() {
-        let node = this.parsePrimary();
+    parseStatementWithSymbols(symbolTable) {
+        // Local variable declaration: <type> <id>[, <id>]* ;
+        if (this.isTypeToken(this.peek())) {
+            let decl = this.parseLocalVariableDeclaration();
+            for (let name of decl.names) {
+                symbolTable.declare(name, { halType: decl.halType });
+            }
+            return decl;
+        }
+        // Assignment: <id> = <expr> ;
+        if (this.peek().type === "IDENTIFIER" && this.peek(1).type === "EQUALS") {
+            let left = this.expect("IDENTIFIER");
+            if (!symbolTable.lookup(left.value)) {
+                throw new ParseError(`Variable '${left.value}' is not declared`, left);
+            }
+            this.expect("EQUALS");
+            let expr = this.parseExpressionWithSymbols(symbolTable);
+            this.accept("SEMICOLON");
+            return { type: "Assignment", left: left.value, expr };
+        }
+        // Return statement
+        if (this.peek().type === "RETURN_KEYWORD") {
+            this.expect("RETURN_KEYWORD");
+            let expr = this.parseExpressionWithSymbols(symbolTable);
+            this.accept("SEMICOLON");
+            return { type: "Return", expr };
+        }
+        // Expression statement (like a function call)
+        let expr = this.parseExpressionWithSymbols(symbolTable);
+        this.accept("SEMICOLON");
+        return { type: "ExpressionStatement", expr };
+    }
+
+    parseLocalVariableDeclaration() {
+        let typeToken = this.peek();
+        let type = this.expect(typeToken.type).value;
+        let ids = [this.expect("IDENTIFIER").value];
+        while (this.accept("COMMA")) {
+            ids.push(this.expect("IDENTIFIER").value);
+        }
+        this.expect("SEMICOLON");
+        return {
+            type: "VarDeclaration",
+            halType: type,
+            names: ids
+        };
+    }
+
+    // Only +, - for demonstration. Expand for *, / etc. as needed.
+    parseExpressionWithSymbols(symbolTable) {
+        let node = this.parsePrimaryWithSymbols(symbolTable);
         while (this.peek().type === "PLUS" || this.peek().type === "MINUS") {
             let op = this.expect(this.peek().type).type;
-            let right = this.parsePrimary();
+            let right = this.parsePrimaryWithSymbols(symbolTable);
             node = { type: "BinaryExpression", operator: op, left: node, right };
         }
         return node;
     }
 
-    parsePrimary() {
+    parsePrimaryWithSymbols(symbolTable) {
         let t = this.peek();
         if (t.type === "IDENTIFIER") {
-            return { type: "Identifier", name: this.expect("IDENTIFIER").value };
+            let id = this.expect("IDENTIFIER");
+            if (!symbolTable.lookup(id.value)) {
+                throw new ParseError(`Variable '${id.value}' is not declared`, id);
+            }
+            return { type: "Identifier", name: id.value };
         }
         if (t.type === "NUMBER") {
             return { type: "NumberLiteral", value: Number(this.expect("NUMBER").value) };
@@ -173,7 +234,7 @@ class Parser {
         if (t.type === "STRING_LITERAL") {
             return { type: "StringLiteral", value: this.expect("STRING_LITERAL").value };
         }
-        throw new Error(`Unexpected token in expression: ${t.type}`);
+        throw new ParseError(`Unexpected token in expression: ${t.type}`, t);
     }
 }
 
