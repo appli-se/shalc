@@ -1,0 +1,11 @@
+global
+procedure CutDecimals(val nr, var string cutstr)
+begin
+  Integer ln;
+  String 200 nrstr;
+  
+  nrstr = "" & nr;
+  ln = Len(nrstr);
+  cutstr = Mid(nrstr,0,ln-3);
+  return;
+end;

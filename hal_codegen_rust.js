@@ -16,13 +16,15 @@ function genRust(ast) {
 }
 
 function rustType(halType) {
-    switch (halType.toLowerCase()) {
+    let base = typeof halType === "object" ? halType.base : halType;
+    switch ((base || "").toLowerCase()) {
         case "integer": return "i32";
         case "longint": return "i64";
         case "boolean": return "bool";
         case "string":  return "String";
         case "roundmode": return "hal::RoundMode";
-        default: return "/* unknown: " + halType + " */";
+        case "val": return "f64";
+        default: return "/* unknown: " + base + " */";
     }
 }
 
@@ -40,7 +42,11 @@ function genBlock(block, paramNames = []) {
         } else if (stmt.type === "Assignment") {
             code.push(`${stmt.left} = ${genExpr(stmt.expr)};`);
         } else if (stmt.type === "Return") {
-            code.push(`return ${genExpr(stmt.expr)};`);
+            if (stmt.expr) {
+                code.push(`return ${genExpr(stmt.expr)};`);
+            } else {
+                code.push(`return;`);
+            }
         } else if (stmt.type === "ExpressionStatement") {
             code.push(`${genExpr(stmt.expr)};`);
         } else {
@@ -51,12 +57,14 @@ function genBlock(block, paramNames = []) {
 }
 
 function defaultValueRust(halType) {
-    switch (halType.toLowerCase()) {
+    let base = typeof halType === "object" ? halType.base : halType;
+    switch ((base || "").toLowerCase()) {
         case "integer":  return "0";
         case "longint":  return "0";
         case "boolean":  return "false";
         case "string":   return "String::new()";
         case "roundmode": return "Default::default()";
+        case "val": return "0.0";
         default:         return "Default::default()";
     }
 }
@@ -83,7 +91,26 @@ function genExpr(expr) {
         case "Identifier":      return expr.name;
         case "NumberLiteral":   return expr.value.toString();
         case "StringLiteral":   return JSON.stringify(expr.value);
-        case "BinaryExpression":return `${genExpr(expr.left)} ${opRust(expr.operator)} ${genExpr(expr.right)}`;
+        case "BinaryExpression":
+            if (expr.operator === "AMPERSAND") {
+                return `format!(\"{}{}\", ${genExpr(expr.left)}, ${genExpr(expr.right)})`;
+            }
+            return `${genExpr(expr.left)} ${opRust(expr.operator)} ${genExpr(expr.right)}`;
+        case "CallExpression":
+            switch (expr.callee.toLowerCase()) {
+                case "len":
+                    // assume single argument, return length as i32
+                    return `${genExpr(expr.args[0])}.len() as i32`;
+                case "mid": {
+                    // Mid(string,start,len)
+                    const s = genExpr(expr.args[0]);
+                    const start = genExpr(expr.args[1]);
+                    const len = genExpr(expr.args[2]);
+                    return `${s}[(${start}) as usize..(${start} + ${len}) as usize].to_string()`;
+                }
+                default:
+                    return `${expr.callee}(${expr.args.map(a => genExpr(a)).join(", ")})`;
+            }
         default:
             return `/* Unhandled expr: ${expr.type} */`;
     }
