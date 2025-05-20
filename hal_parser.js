@@ -191,14 +191,7 @@ class Parser {
                 modifiers.push(this.expect(this.peek().type).type);
             }
 
-            let typeToken = this.peek();
-            if (!this.isTypeToken(typeToken)) {
-                throw new ParseError(
-                    `Expected parameter type, but got ${typeToken.type} ('${typeToken.value}')`,
-                    typeToken
-                );
-            }
-            let type = this.expect(typeToken.type).value;
+            let type = this.parseType(false);
 
             let name = null;
             if (this.peek().type === "IDENTIFIER") {
@@ -253,7 +246,10 @@ class Parser {
         // Return statement
         if (this.peek().type === "RETURN_KEYWORD") {
             this.expect("RETURN_KEYWORD");
-            let expr = this.parseExpressionWithSymbols(symbolTable);
+            let expr = null;
+            if (this.peek().type !== "SEMICOLON") {
+                expr = this.parseExpressionWithSymbols(symbolTable);
+            }
             this.accept("SEMICOLON");
             return { type: "Return", expr };
         }
@@ -263,9 +259,25 @@ class Parser {
         return { type: "ExpressionStatement", expr };
     }
 
+    parseType(requireLengthForString = false) {
+        let token = this.peek();
+        if (!this.isTypeToken(token)) {
+            throw new ParseError(`Expected type but got ${token.type}`, token);
+        }
+        let base = this.expect(token.type).value;
+        let length = null;
+        if (base.toLowerCase() === "string") {
+            if (this.peek().type === "NUMBER") {
+                length = Number(this.expect("NUMBER").value);
+            } else if (requireLengthForString) {
+                throw new ParseError("string definition requires length", this.peek());
+            }
+        }
+        return { base, length };
+    }
+
     parseLocalVariableDeclaration() {
-        let typeToken = this.peek();
-        let type = this.expect(typeToken.type).value;
+        let halType = this.parseType(true);
         let ids = [this.expect("IDENTIFIER").value];
         while (this.accept("COMMA")) {
             ids.push(this.expect("IDENTIFIER").value);
@@ -273,7 +285,7 @@ class Parser {
         this.expect("SEMICOLON");
         return {
             type: "VarDeclaration",
-            halType: type,
+            halType,
             names: ids
         };
     }
@@ -281,7 +293,7 @@ class Parser {
     // Only +, - for demonstration. Expand for *, / etc. as needed.
     parseExpressionWithSymbols(symbolTable) {
         let node = this.parsePrimaryWithSymbols(symbolTable);
-        while (this.peek().type === "PLUS" || this.peek().type === "MINUS") {
+        while (["PLUS", "MINUS", "AMPERSAND"].includes(this.peek().type)) {
             let op = this.expect(this.peek().type).type;
             let right = this.parsePrimaryWithSymbols(symbolTable);
             node = { type: "BinaryExpression", operator: op, left: node, right };
@@ -293,16 +305,31 @@ class Parser {
         let t = this.peek();
         if (t.type === "IDENTIFIER") {
             let id = this.expect("IDENTIFIER");
-            if (!symbolTable.lookup(id.value)) {
-                throw new ParseError(`Variable '${id.value}' is not declared`, id);
+            if (this.peek().type === "LPAREN") {
+                this.expect("LPAREN");
+                const args = [];
+                if (this.peek().type !== "RPAREN") {
+                    args.push(this.parseExpressionWithSymbols(symbolTable));
+                    while (this.accept("COMMA")) {
+                        args.push(this.parseExpressionWithSymbols(symbolTable));
+                    }
+                }
+                this.expect("RPAREN");
+                return { type: "CallExpression", callee: id.value, args };
+            } else {
+                if (!symbolTable.lookup(id.value)) {
+                    throw new ParseError(`Variable '${id.value}' is not declared`, id);
+                }
+                return { type: "Identifier", name: id.value };
             }
-            return { type: "Identifier", name: id.value };
         }
         if (t.type === "NUMBER") {
             return { type: "NumberLiteral", value: Number(this.expect("NUMBER").value) };
         }
         if (t.type === "STRING_LITERAL") {
-            return { type: "StringLiteral", value: this.expect("STRING_LITERAL").value };
+            let raw = this.expect("STRING_LITERAL").value;
+            let content = raw.slice(1, -1);
+            return { type: "StringLiteral", value: content };
         }
         throw new ParseError(`Unexpected token in expression: ${t.type}`, t);
     }
