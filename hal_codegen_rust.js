@@ -7,6 +7,9 @@ function genRust(ast) {
             out.push(genFunction(item));
         } else if (item.type === "Procedure") {
             out.push(genProcedure(item));
+        } else if (item.type === "ExternalFunction" || item.type === "ExternalProcedure") {
+            // External declarations have no body; emit a comment for now
+            out.push(`// external ${item.type === "ExternalFunction" ? "function" : "procedure"} ${item.name}`);
         }
     }
     return out.join("\n\n");

@@ -76,57 +76,121 @@ class Parser {
     parseItem() {
         // Collect all leading modifiers (as long as they are allowed keywords)
         const modifiers = [];
-        while (["GLOBAL_KEYWORD", "EXTERNAL_KEYWORD", "UPDATING_KEYWORD", "INNER_KEYWORD", "REMOTE_KEYWORD", "OUTER_KEYWORD"].includes(this.peek().type)) {
+        while ([
+            "GLOBAL_KEYWORD",
+            "EXTERNAL_KEYWORD",
+            "UPDATING_KEYWORD",
+            "INNER_KEYWORD",
+            "REMOTE_KEYWORD",
+            "OUTER_KEYWORD",
+        ].includes(this.peek().type)) {
             modifiers.push(this.expect(this.peek().type).type);
         }
-        // After modifiers, expect a function or procedure
+
         if (this.peek().type === "FUNCTION_KEYWORD") {
-            return this.parseFunction(modifiers);
+            return this.parseFunctionOrExternal(modifiers);
         } else if (this.peek().type === "PROCEDURE_KEYWORD") {
-            return this.parseProcedure(modifiers);
+            return this.parseProcedureOrExternal(modifiers);
+        }
+
+        // Not a recognized declaration, skip or throw (based on your error handling policy)
+        this.pos++;
+        return null;
+    }
+
+    parseFunctionOrExternal(modifiers = []) {
+        this.expect("FUNCTION_KEYWORD");
+        let returnType = null;
+        if (this.isTypeToken(this.peek())) {
+            returnType = this.expect(this.peek().type).value;
+        }
+        let nameToken = this.expect("IDENTIFIER");
+        let name = nameToken.value;
+        let params = [];
+        if (this.accept("LPAREN")) {
+            params = this.parseParamList(modifiers.indexOf("EXTERNAL_KEYWORD") === -1);
+            this.expect("RPAREN");
+        }
+        const isExternal = modifiers.includes("EXTERNAL_KEYWORD");
+        const hasBody = this.peek().type === "BEGIN_KEYWORD";
+
+        if (isExternal && modifiers.includes("GLOBAL_KEYWORD")) {
+            throw new ParseError("external cannot be combined with global", this.peek(-1));
+        }
+
+        if (isExternal) {
+            if (hasBody) {
+                throw new ParseError("external function cannot have a body", this.peek());
+            }
+            this.accept("SEMICOLON");
+            return { type: "ExternalFunction", name, returnType, params, modifiers };
         } else {
-            // Not a recognized declaration, skip or throw (based on your error handling policy)
-            this.pos++;
-            return null;
+            if (!hasBody) {
+                throw new ParseError("function definition requires a body", this.peek());
+            }
+            if (params.some(p => p.name === null)) {
+                throw new ParseError("function parameters must have names", this.peek());
+            }
+            let body = this.parseBlock(params.map(p => p.name));
+            return { type: "Function", name, returnType, params, body, modifiers };
         }
     }
 
     parseFunction(modifiers = []) {
-        this.expect("FUNCTION_KEYWORD");
-        let typeToken = this.peek();
-        if (!this.isTypeToken(typeToken)) {
-            throw new ParseError(
-                `Expected type after 'function', but got ${typeToken.type} ('${typeToken.value}')`,
-                typeToken
-            );
-        }
-        let returnType = this.expect(typeToken.type).value;
-        let nameToken = this.expect("IDENTIFIER");
-        let name = nameToken.value;
-        this.expect("LPAREN");
-        let params = this.parseParamList();
-        this.expect("RPAREN");
-        let body = this.parseBlock(params.map(p => p.name));
-        return { type: "Function", name, returnType, params, body, modifiers };
+        // deprecated: kept for compatibility, now calls parseFunctionOrExternal
+        return this.parseFunctionOrExternal(modifiers);
     }
 
-    parseProcedure(modifiers = []) {
+    parseProcedureOrExternal(modifiers = []) {
         this.expect("PROCEDURE_KEYWORD");
         let nameToken = this.expect("IDENTIFIER");
         let name = nameToken.value;
-        this.expect("LPAREN");
-        let params = this.parseParamList();
-        this.expect("RPAREN");
-        let body = this.parseBlock(params.map(p => p.name));
-        return { type: "Procedure", name, params, body, modifiers };
+        let params = [];
+        if (this.accept("LPAREN")) {
+            params = this.parseParamList(modifiers.indexOf("EXTERNAL_KEYWORD") === -1);
+            this.expect("RPAREN");
+        }
+        const isExternal = modifiers.includes("EXTERNAL_KEYWORD");
+        const hasBody = this.peek().type === "BEGIN_KEYWORD";
+
+        if (isExternal && modifiers.includes("GLOBAL_KEYWORD")) {
+            throw new ParseError("external cannot be combined with global", this.peek(-1));
+        }
+
+        if (isExternal) {
+            if (hasBody) {
+                throw new ParseError("external procedure cannot have a body", this.peek());
+            }
+            this.accept("SEMICOLON");
+            return { type: "ExternalProcedure", name, params, modifiers };
+        } else {
+            if (!hasBody) {
+                throw new ParseError("procedure definition requires a body", this.peek());
+            }
+            if (params.some(p => p.name === null)) {
+                throw new ParseError("procedure parameters must have names", this.peek());
+            }
+            let body = this.parseBlock(params.map(p => p.name));
+            return { type: "Procedure", name, params, body, modifiers };
+        }
     }
 
-    parseParamList() {
+    parseProcedure(modifiers = []) {
+        // deprecated: kept for compatibility
+        return this.parseProcedureOrExternal(modifiers);
+    }
+
+    parseParamList(requireNames = false) {
         const params = [];
         while (
             this.peek().type !== "RPAREN" &&
             this.peek().type !== "EOF"
         ) {
+            const modifiers = [];
+            while (this.peek().type === "VAR_KEYWORD" || this.peek().type === "ARRAY_KEYWORD") {
+                modifiers.push(this.expect(this.peek().type).type);
+            }
+
             let typeToken = this.peek();
             if (!this.isTypeToken(typeToken)) {
                 throw new ParseError(
@@ -135,9 +199,15 @@ class Parser {
                 );
             }
             let type = this.expect(typeToken.type).value;
-            let nameToken = this.expect("IDENTIFIER");
-            let name = nameToken.value;
-            params.push({ type, name });
+
+            let name = null;
+            if (this.peek().type === "IDENTIFIER") {
+                name = this.expect("IDENTIFIER").value;
+            } else if (requireNames) {
+                throw new ParseError("Parameter name required", this.peek());
+            }
+
+            params.push({ type, name, modifiers });
             if (!this.accept("COMMA")) break;
         }
         return params;
