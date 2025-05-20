@@ -69,7 +69,7 @@ function genProcedure(proc) {
     const params = proc.params.map(
         p => `${p.name}: ${rustType(p.type)}`
     ).join(", ");
-    const pub = fn.modifiers && fn.modifiers.includes("GLOBAL_KEYWORD") ? "pub " : "";
+    const pub = proc.modifiers && proc.modifiers.includes("GLOBAL_KEYWORD") ? "pub " : "";
     return `${pub}fn ${proc.name}(${params}) {\n${indent(genBlock(proc.body, proc.params.map(p => p.name)))}\n}`;
 }
 

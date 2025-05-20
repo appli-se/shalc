@@ -11,6 +11,12 @@ try {
             z = x + y;
             return z;
         end;
+
+        procedure bar(integer a)
+        begin
+            integer b;
+            b = a + 1;
+        end;
     `;
     ast = parse(code);
 } catch (e) {
