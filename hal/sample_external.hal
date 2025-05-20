@@ -1,0 +1,2 @@
+external function integer ext_add(integer a, integer b);
+external procedure ext_proc(integer x);
