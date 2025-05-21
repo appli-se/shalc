@@ -34,6 +34,7 @@ class Parser {
         this.tokens = tokens;
         this.pos = 0;
         this.functionTable = functionTable;
+        this.currentFunctionName = null;
     }
     peek(offset = 0) {
         return this.tokens[this.pos + offset];
@@ -134,7 +135,10 @@ class Parser {
             if (params.some(p => p.name === null)) {
                 throw new ParseError("function parameters must have names", this.peek());
             }
+            const prevFunction = this.currentFunctionName;
+            this.currentFunctionName = name;
             let body = this.parseBlock(params.map(p => p.name), null);
+            this.currentFunctionName = prevFunction;
             item = { type: "Function", name, returnType, params, body, modifiers };
         }
         this.functionTable.set(name.toLowerCase(), { kind: item.type, returnType, params });
@@ -455,7 +459,9 @@ class Parser {
     parseMemberExpression(symbolTable) {
         let idToken = this.expect("IDENTIFIER");
         if (!symbolTable.lookup(idToken.value)) {
-            throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
+            if (idToken.value !== this.currentFunctionName) {
+                throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
+            }
         }
         let node = { type: "Identifier", name: idToken.value };
         while (this.peek().type === "DOT" || this.peek().type === "LBRACKET") {
@@ -559,7 +565,7 @@ class Parser {
                 return { type: "CallExpression", callee: idToken.value, args };
             } else {
                 const varEntry = symbolTable.lookup(idToken.value);
-                if (varEntry) {
+                if (varEntry || idToken.value === this.currentFunctionName) {
                     let node = { type: "Identifier", name: idToken.value };
                     while (this.peek().type === "DOT" || this.peek().type === "LBRACKET") {
                         if (this.peek().type === "DOT") {

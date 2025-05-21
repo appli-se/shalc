@@ -127,7 +127,10 @@ function genFunction(fn) {
     ).join(", ");
     const retType = rustType(fn.returnType) || "i32";
     const pub = fn.modifiers && fn.modifiers.includes("GLOBAL_KEYWORD") ? "pub " : "";
-    return `${pub}fn ${fn.name}(${params}) -> ${retType} {\n${indent(genBlock(fn.body, fn.params.map(p => p.name)))}\n}`;
+    const retVarDecl = `let mut ${fn.name}: ${retType} = ${defaultValueRust(fn.returnType)};`;
+    const body = genBlock(fn.body, fn.params.map(p => p.name).concat(fn.name));
+    const retLine = `return ${fn.name};`;
+    return `${pub}fn ${fn.name}(${params}) -> ${retType} {\n${indent(retVarDecl)}\n${indent(body)}\n${indent(retLine)}\n}`;
 }
 
 function genProcedure(proc) {
