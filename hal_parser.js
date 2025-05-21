@@ -582,7 +582,16 @@ class Parser {
                     return node;
                 }
                 const entry = this.functionTable.get(idToken.value.toLowerCase());
-                if (entry && entry.params.length === 0 && (entry.kind === "Procedure" || entry.kind === "ExternalProcedure")) {
+                if (
+                    entry &&
+                    entry.params.length === 0 &&
+                    (
+                        entry.kind === "Procedure" ||
+                        entry.kind === "ExternalProcedure" ||
+                        entry.kind === "Function" ||
+                        entry.kind === "ExternalFunction"
+                    )
+                ) {
                     return { type: "CallExpression", callee: idToken.value, args: [] };
                 }
                 throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);

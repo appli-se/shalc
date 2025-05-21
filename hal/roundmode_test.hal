@@ -1,0 +1,5 @@
+procedure roundmode_test()
+begin
+    roundmode rnddef;
+    rnddef = DefaultValRoundoff;
+end;
