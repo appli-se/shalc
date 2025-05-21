@@ -50,6 +50,17 @@ row A r;
 This currently generates the same Rust code as a `record` variable and simply
 initializes the struct with `Default::default()`.
 
+### Array Variables
+
+Array variables can be declared using the `array` keyword:
+
+```
+array integer nums;
+```
+
+Indexing expressions like `nums[0]` are supported and translated to Rust vector
+syntax. Array variables become `Vec` types in the generated Rust code.
+
 ### Switch Statements
 
 Switch statements following the HAL syntax are supported and are translated into

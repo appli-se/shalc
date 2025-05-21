@@ -24,6 +24,8 @@ function rustType(halType) {
         case "string":  return "String";
         case "roundmode": return "hal::RoundMode";
         case "val": return "f64";
+        case "array":
+            return `Vec<${rustType(halType.elementType)}>`;
         case "record":
         case "row":
             return halType.record;
@@ -114,6 +116,7 @@ function defaultValueRust(halType) {
         case "string":   return "String::new()";
         case "roundmode": return "Default::default()";
         case "val": return "0.0";
+        case "array": return "Vec::new()";
         default:         return "Default::default()";
     }
 }
@@ -165,6 +168,8 @@ function genExpr(expr) {
             }
         case "MemberExpression":
             return `${genExpr(expr.object)}.${expr.property}`;
+        case "IndexExpression":
+            return `${genExpr(expr.array)}[(${genExpr(expr.index)}) as usize]`;
         case "ParenExpression":
             return `(${genExpr(expr.expr)})`;
         default:
