@@ -21,9 +21,19 @@ try {
     process.exit(1);
 }
 
+const builtinPath = path.join(__dirname, 'hal', 'primitives.hal');
+let builtinCode = '';
+try {
+    builtinCode = fs.readFileSync(builtinPath, 'utf8');
+} catch (e) {
+    // If the file doesn't exist simply continue with empty builtins
+}
+
 let ast;
 try {
-    ast = parse(code);
+    const { ast: builtins, functionTable } = parse(builtinCode);
+    const { ast: userAst } = parse(code, functionTable);
+    ast = { type: 'Program', items: [...builtins.items, ...userAst.items] };
 } catch (e) {
     if (e instanceof ParseError) {
         console.error(e.message);

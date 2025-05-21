@@ -30,9 +30,10 @@ class SymbolTable {
 }
 
 class Parser {
-    constructor(tokens) {
+    constructor(tokens, functionTable = new Map()) {
         this.tokens = tokens;
         this.pos = 0;
+        this.functionTable = functionTable;
     }
     peek(offset = 0) {
         return this.tokens[this.pos + offset];
@@ -103,7 +104,7 @@ class Parser {
         this.expect("FUNCTION_KEYWORD");
         let returnType = null;
         if (this.isTypeToken(this.peek())) {
-            returnType = this.expect(this.peek().type).value;
+            returnType = this.parseType(false);
         }
         let nameToken = this.expect("IDENTIFIER");
         let name = nameToken.value;
@@ -119,12 +120,13 @@ class Parser {
             throw new ParseError("external cannot be combined with global", this.peek(-1));
         }
 
+        let item;
         if (isExternal) {
             if (hasBody) {
                 throw new ParseError("external function cannot have a body", this.peek());
             }
             this.accept("SEMICOLON");
-            return { type: "ExternalFunction", name, returnType, params, modifiers };
+            item = { type: "ExternalFunction", name, returnType, params, modifiers };
         } else {
             if (!hasBody) {
                 throw new ParseError("function definition requires a body", this.peek());
@@ -133,8 +135,10 @@ class Parser {
                 throw new ParseError("function parameters must have names", this.peek());
             }
             let body = this.parseBlock(params.map(p => p.name), null);
-            return { type: "Function", name, returnType, params, body, modifiers };
+            item = { type: "Function", name, returnType, params, body, modifiers };
         }
+        this.functionTable.set(name.toLowerCase(), { kind: item.type, returnType, params });
+        return item;
     }
 
     parseFunction(modifiers = []) {
@@ -158,12 +162,13 @@ class Parser {
             throw new ParseError("external cannot be combined with global", this.peek(-1));
         }
 
+        let item;
         if (isExternal) {
             if (hasBody) {
                 throw new ParseError("external procedure cannot have a body", this.peek());
             }
             this.accept("SEMICOLON");
-            return { type: "ExternalProcedure", name, params, modifiers };
+            item = { type: "ExternalProcedure", name, params, modifiers };
         } else {
             if (!hasBody) {
                 throw new ParseError("procedure definition requires a body", this.peek());
@@ -172,8 +177,10 @@ class Parser {
                 throw new ParseError("procedure parameters must have names", this.peek());
             }
             let body = this.parseBlock(params.map(p => p.name), null);
-            return { type: "Procedure", name, params, body, modifiers };
+            item = { type: "Procedure", name, params, body, modifiers };
         }
+        this.functionTable.set(name.toLowerCase(), { kind: item.type, returnType: null, params });
+        return item;
     }
 
     parseProcedure(modifiers = []) {
@@ -542,6 +549,13 @@ class Parser {
                     }
                 }
                 this.expect("RPAREN");
+                const entry = this.functionTable.get(idToken.value.toLowerCase());
+                if (!entry) {
+                    throw new ParseError(`Function or procedure '${idToken.value}' is not defined`, idToken);
+                }
+                if (entry.params.length !== args.length) {
+                    throw new ParseError(`'${idToken.value}' expects ${entry.params.length} arguments`, idToken);
+                }
                 return { type: "CallExpression", callee: idToken.value, args };
             } else {
                 if (!symbolTable.lookup(idToken.value)) {
@@ -579,10 +593,11 @@ class Parser {
     }
 }
 
-function parse(input) {
+function parse(input, functionTable = new Map()) {
     const tokens = lex(input);
-    const parser = new Parser(tokens);
-    return parser.parseProgram();
+    const parser = new Parser(tokens, functionTable);
+    const ast = parser.parseProgram();
+    return { ast, functionTable: parser.functionTable };
 }
 
-module.exports = { parse, ParseError };
+module.exports = { parse, ParseError, Parser };
