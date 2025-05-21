@@ -116,11 +116,14 @@ function genExpr(expr) {
         case "Identifier":      return expr.name;
         case "NumberLiteral":   return expr.value.toString();
         case "StringLiteral":   return JSON.stringify(expr.value);
+        case "BooleanLiteral":  return expr.value ? "true" : "false";
         case "BinaryExpression":
             if (expr.operator === "AMPERSAND") {
                 return `format!(\"{}{}\", ${genExpr(expr.left)}, ${genExpr(expr.right)})`;
             }
             return `${genExpr(expr.left)} ${opRust(expr.operator)} ${genExpr(expr.right)}`;
+        case "UnaryExpression":
+            return `${opRust(expr.operator)}${genExpr(expr.argument)}`;
         case "CallExpression":
             switch (expr.callee.toLowerCase()) {
                 case "len":
@@ -155,6 +158,10 @@ function opRust(op) {
         case "GREATER_OR_EQUAL": return ">=";
         case "EQEQ": return "==";
         case "NOT_EQUALS": return "!=";
+        case "AND_KEYWORD": return "&&";
+        case "OR_KEYWORD": return "||";
+        case "NOT_KEYWORD": return "!";
+        case "NOT_OP": return "!";
         default: return op;
     }
 }

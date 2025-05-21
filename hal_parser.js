@@ -341,6 +341,30 @@ class Parser {
     }
 
     parseExpressionWithSymbols(symbolTable) {
+        return this.parseLogicOrExpression(symbolTable);
+    }
+
+    parseLogicOrExpression(symbolTable) {
+        let node = this.parseLogicAndExpression(symbolTable);
+        while (this.peek().type === "OR_KEYWORD") {
+            this.expect("OR_KEYWORD");
+            let right = this.parseLogicAndExpression(symbolTable);
+            node = { type: "BinaryExpression", operator: "OR_KEYWORD", left: node, right };
+        }
+        return node;
+    }
+
+    parseLogicAndExpression(symbolTable) {
+        let node = this.parseComparisonExpression(symbolTable);
+        while (this.peek().type === "AND_KEYWORD") {
+            this.expect("AND_KEYWORD");
+            let right = this.parseComparisonExpression(symbolTable);
+            node = { type: "BinaryExpression", operator: "AND_KEYWORD", left: node, right };
+        }
+        return node;
+    }
+
+    parseComparisonExpression(symbolTable) {
         let node = this.parseAdditiveExpression(symbolTable);
         while ([
             "LESS", "LESS_OR_EQUAL", "GREATER", "GREATER_OR_EQUAL",
@@ -354,13 +378,22 @@ class Parser {
     }
 
     parseAdditiveExpression(symbolTable) {
-        let node = this.parsePrimaryWithSymbols(symbolTable);
+        let node = this.parseUnaryExpression(symbolTable);
         while (["PLUS", "MINUS", "AMPERSAND"].includes(this.peek().type)) {
             let op = this.expect(this.peek().type).type;
-            let right = this.parsePrimaryWithSymbols(symbolTable);
+            let right = this.parseUnaryExpression(symbolTable);
             node = { type: "BinaryExpression", operator: op, left: node, right };
         }
         return node;
+    }
+
+    parseUnaryExpression(symbolTable) {
+        if (["PLUS", "MINUS", "NOT_KEYWORD", "NOT_OP"].includes(this.peek().type)) {
+            let op = this.expect(this.peek().type).type;
+            let argument = this.parseUnaryExpression(symbolTable);
+            return { type: "UnaryExpression", operator: op, argument };
+        }
+        return this.parsePrimaryWithSymbols(symbolTable);
     }
 
     parsePrimaryWithSymbols(symbolTable) {
@@ -398,6 +431,10 @@ class Parser {
             let raw = this.expect("STRING_LITERAL").value;
             let content = raw.slice(1, -1);
             return { type: "StringLiteral", value: content };
+        }
+        if (t.type === "TRUE_KEYWORD" || t.type === "FALSE_KEYWORD") {
+            this.expect(t.type);
+            return { type: "BooleanLiteral", value: t.type === "TRUE_KEYWORD" };
         }
         throw new ParseError(`Unexpected token in expression: ${t.type}`, t);
     }

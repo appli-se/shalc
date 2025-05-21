@@ -9,7 +9,7 @@ const tokenSpecs = [
     // Keywords (longest first)
     ...[
       "otherwise", "procedure", "function", "external", "updating", "global", "begin", "end", "if", "then", "else", "for", "while", "repeat",
-      "var", "array", "record", "of", "return", "switch", "case", "const", "true", "false", "null", "window", "remote", "inner", "outer"
+      "var", "array", "record", "of", "return", "switch", "case", "const", "true", "false", "null", "window", "remote", "inner", "outer", "and", "or", "not"
     ].map(kw => ({ type: kw.toUpperCase() + "_KEYWORD", regex: new RegExp("^" + kw + "\\b", "i") })),
     // Types
     ...[
