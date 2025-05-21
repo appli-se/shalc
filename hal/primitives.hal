@@ -1,0 +1,3 @@
+external function integer len(string);
+external function string 9999 mid(string, integer, integer);
+external procedure OverrideLangCode();
