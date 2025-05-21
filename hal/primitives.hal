@@ -8,3 +8,4 @@ external function string 9999 mid(string, integer, integer);
 external function boolean nonblank(string);
 external procedure overridelangcode();
 external function boolean readfirstmain(record namevc, integer, boolean);
+external function val round(val, roundmode);
