@@ -2,7 +2,7 @@ global
 function integer foo(integer x, integer y)
 begin
     integer z;
-    z = x + y;
+    z = (x + y);
     return z;
 end;
 

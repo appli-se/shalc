@@ -365,6 +365,12 @@ class Parser {
 
     parsePrimaryWithSymbols(symbolTable) {
         let t = this.peek();
+        if (t.type === "LPAREN") {
+            this.expect("LPAREN");
+            const expr = this.parseExpressionWithSymbols(symbolTable);
+            this.expect("RPAREN");
+            return { type: "ParenExpression", expr };
+        }
         if (t.type === "IDENTIFIER") {
             let id = this.expect("IDENTIFIER");
             if (this.peek().type === "LPAREN") {
