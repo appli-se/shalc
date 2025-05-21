@@ -24,6 +24,7 @@ function rustType(halType) {
         case "string":  return "String";
         case "roundmode": return "hal::RoundMode";
         case "val": return "f64";
+        case "record": return halType.record;
         default: return "/* unknown: " + base + " */";
     }
 }
@@ -35,12 +36,16 @@ function genBlock(block, paramNames = []) {
     for (const stmt of block.statements) {
         if (stmt.type === "VarDeclaration") {
             for (const name of stmt.names) {
-                // Declare all variables with let mut and the right type (init to default)
-                code.push(`let mut ${name}: ${rustType(stmt.halType)} = ${defaultValueRust(stmt.halType)};`);
+                if (stmt.halType.base && stmt.halType.base.toLowerCase() === "record") {
+                    code.push(`use datadef::${stmt.halType.record};`);
+                    code.push(`let mut ${name}: ${stmt.halType.record} = Default::default();`);
+                } else {
+                    code.push(`let mut ${name}: ${rustType(stmt.halType)} = ${defaultValueRust(stmt.halType)};`);
+                }
                 declared.add(name);
             }
         } else if (stmt.type === "Assignment") {
-            code.push(`${stmt.left} = ${genExpr(stmt.expr)};`);
+            code.push(`${genExpr(stmt.left)} = ${genExpr(stmt.expr)};`);
         } else if (stmt.type === "Return") {
             if (stmt.expr) {
                 code.push(`return ${genExpr(stmt.expr)};`);
@@ -63,9 +68,9 @@ function genBlock(block, paramNames = []) {
             const body = indent(genBlock(stmt.body));
             code.push(`while ${cond} {\n${body}\n}`);
         } else if (stmt.type === "ForStatement") {
-            const initLine = `${stmt.init.left} = ${genExpr(stmt.init.expr)};`;
+            const initLine = `${genExpr(stmt.init.left)} = ${genExpr(stmt.init.expr)};`;
             const cond = genExpr(stmt.condition);
-            const updateLine = `${stmt.update.left} = ${genExpr(stmt.update.expr)};`;
+            const updateLine = `${genExpr(stmt.update.left)} = ${genExpr(stmt.update.expr)};`;
             const body = indent(genBlock(stmt.body));
             code.push(`{`);
             code.push(indent(initLine));
@@ -139,6 +144,8 @@ function genExpr(expr) {
                 default:
                     return `${expr.callee}(${expr.args.map(a => genExpr(a)).join(", ")})`;
             }
+        case "MemberExpression":
+            return `${genExpr(expr.object)}.${expr.property}`;
         case "ParenExpression":
             return `(${genExpr(expr.expr)})`;
         default:

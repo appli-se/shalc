@@ -1,0 +1,5 @@
+procedure recproc()
+begin
+    record A a;
+    a.foo = 1;
+end;
