@@ -1,4 +1,5 @@
 external function integer len(string);
 external function string 9999 mid(string, integer, integer);
-external function boolean nonblank (string);
+external function boolean nonblank(string);
 external procedure OverrideLangCode();
+external function boolean ReadFirstMain(record NameVc, integer, boolean);
