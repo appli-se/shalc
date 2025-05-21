@@ -1,0 +1,6 @@
+function integer get_foo()
+begin
+    record A r;
+    r.foo = 2;
+    return r.foo;
+end;

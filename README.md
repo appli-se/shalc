@@ -19,3 +19,22 @@ This command writes a Rust file next to the input with the `.rs` extension (for 
 
 The provided `sample.hal` contains a global function `foo` and a procedure `bar`.
 After running the command above you will find `sample.rs` with the generated Rust code.
+
+### Record Variables
+
+The compiler understands simple `record` variable declarations such as:
+
+```
+record A a;
+```
+
+This will result in Rust code using the corresponding struct from a `datadef`
+module and initializing the variable with `Default::default()`:
+
+```
+use datadef::A;
+let mut a: A = Default::default();
+```
+
+Field accesses like `a.foo` are allowed without validating whether the field
+exists in the record.

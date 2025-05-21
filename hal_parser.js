@@ -232,11 +232,17 @@ class Parser {
             }
             return decl;
         }
-        // Assignment: <id> = <expr> ;
-        if (this.peek().type === "IDENTIFIER" && this.peek(1).type === "EQUALS") {
-            const assign = this.parseAssignmentExpr(symbolTable);
-            this.accept("SEMICOLON");
-            return assign;
+        // Assignment: <id>[.field]* = <expr> ;
+        if (this.peek().type === "IDENTIFIER") {
+            let lookahead = 1;
+            while (this.peek(lookahead).type === "DOT" && this.peek(lookahead + 1).type === "IDENTIFIER") {
+                lookahead += 2;
+            }
+            if (this.peek(lookahead).type === "EQUALS") {
+                const assign = this.parseAssignmentExpr(symbolTable);
+                this.accept("SEMICOLON");
+                return assign;
+            }
         }
         // Return statement
         if (this.peek().type === "RETURN_KEYWORD") {
@@ -271,6 +277,14 @@ class Parser {
         if (!this.isTypeToken(token)) {
             throw new ParseError(`Expected type but got ${token.type}`, token);
         }
+
+        // Handle "record <TypeName>" specially
+        if (token.type === "RECORD_KEYWORD") {
+            this.expect("RECORD_KEYWORD");
+            const recordName = this.expect("IDENTIFIER").value;
+            return { base: "record", record: recordName };
+        }
+
         let base = this.expect(token.type).value;
         let length = null;
         if (base.toLowerCase() === "string") {
@@ -331,13 +345,24 @@ class Parser {
     }
 
     parseAssignmentExpr(symbolTable) {
-        const left = this.expect("IDENTIFIER");
-        if (!symbolTable.lookup(left.value)) {
-            throw new ParseError(`Variable '${left.value}' is not declared`, left);
-        }
+        const left = this.parseMemberExpression(symbolTable);
         this.expect("EQUALS");
         const expr = this.parseExpressionWithSymbols(symbolTable);
-        return { type: "Assignment", left: left.value, expr };
+        return { type: "Assignment", left, expr };
+    }
+
+    parseMemberExpression(symbolTable) {
+        let idToken = this.expect("IDENTIFIER");
+        if (!symbolTable.lookup(idToken.value)) {
+            throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
+        }
+        let node = { type: "Identifier", name: idToken.value };
+        while (this.peek().type === "DOT") {
+            this.expect("DOT");
+            const prop = this.expect("IDENTIFIER").value;
+            node = { type: "MemberExpression", object: node, property: prop };
+        }
+        return node;
     }
 
     parseExpressionWithSymbols(symbolTable) {
@@ -405,7 +430,7 @@ class Parser {
             return { type: "ParenExpression", expr };
         }
         if (t.type === "IDENTIFIER") {
-            let id = this.expect("IDENTIFIER");
+            let idToken = this.expect("IDENTIFIER");
             if (this.peek().type === "LPAREN") {
                 this.expect("LPAREN");
                 const args = [];
@@ -416,12 +441,18 @@ class Parser {
                     }
                 }
                 this.expect("RPAREN");
-                return { type: "CallExpression", callee: id.value, args };
+                return { type: "CallExpression", callee: idToken.value, args };
             } else {
-                if (!symbolTable.lookup(id.value)) {
-                    throw new ParseError(`Variable '${id.value}' is not declared`, id);
+                if (!symbolTable.lookup(idToken.value)) {
+                    throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
                 }
-                return { type: "Identifier", name: id.value };
+                let node = { type: "Identifier", name: idToken.value };
+                while (this.peek().type === "DOT") {
+                    this.expect("DOT");
+                    const prop = this.expect("IDENTIFIER").value;
+                    node = { type: "MemberExpression", object: node, property: prop };
+                }
+                return node;
             }
         }
         if (t.type === "NUMBER") {
