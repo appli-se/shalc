@@ -1,5 +1,6 @@
 external function boolean blank(string);
 external procedure blockload(record blockname);
+external function roundmode defaultvalroundoff();
 external function integer len(string);
 external function integer matrowcnt(record namevc);
 external procedure matrowget(record namevc, integer, row namevc);
