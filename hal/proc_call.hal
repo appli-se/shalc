@@ -6,4 +6,5 @@ procedure test()
 begin
     overridelangcode;
     noproc;
+    clientremoteasync.Do_DisplayWarning("hello");
 end;

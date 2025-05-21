@@ -9,3 +9,4 @@ external function boolean nonblank(string);
 external procedure overridelangcode();
 external function boolean readfirstmain(record namevc, integer, boolean);
 external function val round(val, roundmode);
+external procedure do_displaywarning(string);

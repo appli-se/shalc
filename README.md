@@ -70,3 +70,15 @@ Rust `match` expressions.
 
 Simple labels (`label:`) and `goto` statements are recognized by the parser.
 In the generated Rust code they currently appear as comments.
+
+### Async Procedure Calls
+
+Procedure calls can optionally be prefixed with an asynchronous queue name
+followed by a period. Currently the predefined queue is `clientremoteasync`.
+A call like
+
+```hal
+clientremoteasync.MyProc(1);
+```
+
+is parsed and emitted as a commented placeholder in the generated Rust code.

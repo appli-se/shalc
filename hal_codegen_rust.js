@@ -100,6 +100,9 @@ function genBlock(block, paramNames = []) {
                 arms.push(`_ => {\n${body}\n}`);
             }
             code.push(`match ${disc} {\n${indent(arms.join(",\n"))}\n}`);
+        } else if (stmt.type === "AsyncCallStatement") {
+            const args = stmt.args.map(a => genExpr(a)).join(", ");
+            code.push(`// async ${stmt.queue}.${stmt.callee}(${args})`);
         } else {
             code.push(`/* Unhandled statement: ${stmt.type} */`);
         }
