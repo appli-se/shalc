@@ -136,6 +136,8 @@ function genExpr(expr) {
                 default:
                     return `${expr.callee}(${expr.args.map(a => genExpr(a)).join(", ")})`;
             }
+        case "ParenExpression":
+            return `(${genExpr(expr.expr)})`;
         default:
             return `/* Unhandled expr: ${expr.type} */`;
     }
