@@ -49,6 +49,31 @@ function genBlock(block, paramNames = []) {
             }
         } else if (stmt.type === "ExpressionStatement") {
             code.push(`${genExpr(stmt.expr)};`);
+        } else if (stmt.type === "IfStatement") {
+            const cond = genExpr(stmt.condition);
+            const thenCode = indent(genBlock(stmt.consequent));
+            if (stmt.alternate) {
+                const elseCode = indent(genBlock(stmt.alternate));
+                code.push(`if ${cond} {\n${thenCode}\n} else {\n${elseCode}\n}`);
+            } else {
+                code.push(`if ${cond} {\n${thenCode}\n}`);
+            }
+        } else if (stmt.type === "WhileStatement") {
+            const cond = genExpr(stmt.condition);
+            const body = indent(genBlock(stmt.body));
+            code.push(`while ${cond} {\n${body}\n}`);
+        } else if (stmt.type === "ForStatement") {
+            const initLine = `${stmt.init.left} = ${genExpr(stmt.init.expr)};`;
+            const cond = genExpr(stmt.condition);
+            const updateLine = `${stmt.update.left} = ${genExpr(stmt.update.expr)};`;
+            const body = indent(genBlock(stmt.body));
+            code.push(`{`);
+            code.push(indent(initLine));
+            code.push(indent(`while ${cond} {`));
+            code.push(indent(indent(body)));
+            code.push(indent(indent(updateLine)));
+            code.push(indent(`}`));
+            code.push(`}`);
         } else {
             code.push(`/* Unhandled statement: ${stmt.type} */`);
         }
@@ -122,6 +147,12 @@ function opRust(op) {
         case "MINUS": return "-";
         case "MULTIPLY": return "*";
         case "DIVIDE": return "/";
+        case "LESS": return "<";
+        case "LESS_OR_EQUAL": return "<=";
+        case "GREATER": return ">";
+        case "GREATER_OR_EQUAL": return ">=";
+        case "EQEQ": return "==";
+        case "NOT_EQUALS": return "!=";
         default: return op;
     }
 }

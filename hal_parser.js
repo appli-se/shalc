@@ -131,7 +131,7 @@ class Parser {
             if (params.some(p => p.name === null)) {
                 throw new ParseError("function parameters must have names", this.peek());
             }
-            let body = this.parseBlock(params.map(p => p.name));
+            let body = this.parseBlock(params.map(p => p.name), null);
             return { type: "Function", name, returnType, params, body, modifiers };
         }
     }
@@ -170,7 +170,7 @@ class Parser {
             if (params.some(p => p.name === null)) {
                 throw new ParseError("procedure parameters must have names", this.peek());
             }
-            let body = this.parseBlock(params.map(p => p.name));
+            let body = this.parseBlock(params.map(p => p.name), null);
             return { type: "Procedure", name, params, body, modifiers };
         }
     }
@@ -206,9 +206,9 @@ class Parser {
         return params;
     }
 
-    parseBlock(paramNames = []) {
+    parseBlock(paramNames = [], parentTable = null) {
         this.expect("BEGIN_KEYWORD");
-        const symbolTable = new SymbolTable();
+        const symbolTable = new SymbolTable(parentTable);
         // Parameters are "declared" in the symbol table
         for (let name of paramNames) {
             symbolTable.declare(name, { halType: "parameter" });
@@ -234,14 +234,9 @@ class Parser {
         }
         // Assignment: <id> = <expr> ;
         if (this.peek().type === "IDENTIFIER" && this.peek(1).type === "EQUALS") {
-            let left = this.expect("IDENTIFIER");
-            if (!symbolTable.lookup(left.value)) {
-                throw new ParseError(`Variable '${left.value}' is not declared`, left);
-            }
-            this.expect("EQUALS");
-            let expr = this.parseExpressionWithSymbols(symbolTable);
+            const assign = this.parseAssignmentExpr(symbolTable);
             this.accept("SEMICOLON");
-            return { type: "Assignment", left: left.value, expr };
+            return assign;
         }
         // Return statement
         if (this.peek().type === "RETURN_KEYWORD") {
@@ -252,6 +247,18 @@ class Parser {
             }
             this.accept("SEMICOLON");
             return { type: "Return", expr };
+        }
+        // If statement
+        if (this.peek().type === "IF_KEYWORD") {
+            return this.parseIf(symbolTable);
+        }
+        // While loop
+        if (this.peek().type === "WHILE_KEYWORD") {
+            return this.parseWhile(symbolTable);
+        }
+        // For loop
+        if (this.peek().type === "FOR_KEYWORD") {
+            return this.parseFor(symbolTable);
         }
         // Expression statement (like a function call)
         let expr = this.parseExpressionWithSymbols(symbolTable);
@@ -290,8 +297,63 @@ class Parser {
         };
     }
 
-    // Only +, - for demonstration. Expand for *, / etc. as needed.
+    parseIf(symbolTable) {
+        this.expect("IF_KEYWORD");
+        const condition = this.parseExpressionWithSymbols(symbolTable);
+        this.accept("THEN_KEYWORD");
+        const consequent = this.parseBlock([], symbolTable);
+        let alternate = null;
+        if (this.peek().type === "ELSE_KEYWORD") {
+            this.expect("ELSE_KEYWORD");
+            alternate = this.parseBlock([], symbolTable);
+        }
+        return { type: "IfStatement", condition, consequent, alternate };
+    }
+
+    parseWhile(symbolTable) {
+        this.expect("WHILE_KEYWORD");
+        const condition = this.parseExpressionWithSymbols(symbolTable);
+        const body = this.parseBlock([], symbolTable);
+        return { type: "WhileStatement", condition, body };
+    }
+
+    parseFor(symbolTable) {
+        this.expect("FOR_KEYWORD");
+        this.expect("LPAREN");
+        const init = this.parseAssignmentExpr(symbolTable);
+        this.expect("SEMICOLON");
+        const condition = this.parseExpressionWithSymbols(symbolTable);
+        this.expect("SEMICOLON");
+        const update = this.parseAssignmentExpr(symbolTable);
+        this.expect("RPAREN");
+        const body = this.parseBlock([], symbolTable);
+        return { type: "ForStatement", init, condition, update, body };
+    }
+
+    parseAssignmentExpr(symbolTable) {
+        const left = this.expect("IDENTIFIER");
+        if (!symbolTable.lookup(left.value)) {
+            throw new ParseError(`Variable '${left.value}' is not declared`, left);
+        }
+        this.expect("EQUALS");
+        const expr = this.parseExpressionWithSymbols(symbolTable);
+        return { type: "Assignment", left: left.value, expr };
+    }
+
     parseExpressionWithSymbols(symbolTable) {
+        let node = this.parseAdditiveExpression(symbolTable);
+        while ([
+            "LESS", "LESS_OR_EQUAL", "GREATER", "GREATER_OR_EQUAL",
+            "EQEQ", "NOT_EQUALS"
+        ].includes(this.peek().type)) {
+            let op = this.expect(this.peek().type).type;
+            let right = this.parseAdditiveExpression(symbolTable);
+            node = { type: "BinaryExpression", operator: op, left: node, right };
+        }
+        return node;
+    }
+
+    parseAdditiveExpression(symbolTable) {
         let node = this.parsePrimaryWithSymbols(symbolTable);
         while (["PLUS", "MINUS", "AMPERSAND"].includes(this.peek().type)) {
             let op = this.expect(this.peek().type).type;
