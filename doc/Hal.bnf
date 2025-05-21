@@ -621,6 +621,10 @@ call_suffix ::= LPAREN argument_list? RPAREN {
     getFunctionName
   ]
 }
+// Prefixing a procedure call with an async queue name is allowed.
+// Use a period between the queue name and the procedure.
+// Example: clientremoteasync.MyProc(arg);
+// Currently only clientremoteasync is predefined.
 argument_list ::= expr (COMMA expr)*
 
 ///////////////////////////////////////////////////////////////////////////////

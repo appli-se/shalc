@@ -280,6 +280,37 @@ class Parser {
                 this.accept("SEMICOLON");
                 return assign;
             }
+            // Async queue call: <queue>.<proc>(args?);
+            const asyncQueues = ["clientremoteasync"];
+            if (
+                asyncQueues.includes(this.peek().value.toLowerCase()) &&
+                this.peek(1).type === "DOT" &&
+                this.peek(2).type === "IDENTIFIER"
+            ) {
+                const queue = this.expect("IDENTIFIER").value;
+                this.expect("DOT");
+                const procToken = this.expect("IDENTIFIER");
+                const args = [];
+                if (this.peek().type === "LPAREN") {
+                    this.expect("LPAREN");
+                    if (this.peek().type !== "RPAREN") {
+                        args.push(this.parseExpressionWithSymbols(symbolTable));
+                        while (this.accept("COMMA")) {
+                            args.push(this.parseExpressionWithSymbols(symbolTable));
+                        }
+                    }
+                    this.expect("RPAREN");
+                }
+                const entry = this.functionTable.get(procToken.value.toLowerCase());
+                if (!entry) {
+                    throw new ParseError(`Procedure '${procToken.value}' is not defined`, procToken);
+                }
+                if (entry.params.length !== args.length) {
+                    throw new ParseError(`'${procToken.value}' expects ${entry.params.length} arguments`, procToken);
+                }
+                this.accept("SEMICOLON");
+                return { type: "AsyncCallStatement", queue, callee: procToken.value, args };
+            }
         }
         // Return statement
         if (this.peek().type === "RETURN_KEYWORD") {
