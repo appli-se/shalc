@@ -24,7 +24,9 @@ function rustType(halType) {
         case "string":  return "String";
         case "roundmode": return "hal::RoundMode";
         case "val": return "f64";
-        case "record": return halType.record;
+        case "record":
+        case "row":
+            return halType.record;
         default: return "/* unknown: " + base + " */";
     }
 }
@@ -36,7 +38,7 @@ function genBlock(block, paramNames = []) {
     for (const stmt of block.statements) {
         if (stmt.type === "VarDeclaration") {
             for (const name of stmt.names) {
-                if (stmt.halType.base && stmt.halType.base.toLowerCase() === "record") {
+                if (stmt.halType.base && ["record", "row"].includes(stmt.halType.base.toLowerCase())) {
                     code.push(`use datadef::${stmt.halType.record};`);
                     code.push(`let mut ${name}: ${stmt.halType.record} = Default::default();`);
                 } else {

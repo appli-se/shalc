@@ -39,6 +39,17 @@ let mut a: A = Default::default();
 Field accesses like `a.foo` are allowed without validating whether the field
 exists in the record.
 
+### Row Variables
+
+`row` variables work the same way as `record` variables. The syntax is
+
+```
+row A r;
+```
+
+This currently generates the same Rust code as a `record` variable and simply
+initializes the struct with `Default::default()`.
+
 ### Switch Statements
 
 Switch statements following the HAL syntax are supported and are translated into
