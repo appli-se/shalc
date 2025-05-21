@@ -297,11 +297,17 @@ class Parser {
             throw new ParseError(`Expected type but got ${token.type}`, token);
         }
 
-        // Handle "record <TypeName>" specially
+        // Handle "record <TypeName>" and "row <TypeName>" specially
         if (token.type === "RECORD_KEYWORD") {
             this.expect("RECORD_KEYWORD");
             const recordName = this.expect("IDENTIFIER").value;
             return { base: "record", record: recordName };
+        }
+        if (token.type === "ROW_KEYWORD") {
+            this.expect("ROW_KEYWORD");
+            const recordName = this.expect("IDENTIFIER").value;
+            // Treat row like record for now
+            return { base: "row", record: recordName };
         }
 
         let base = this.expect(token.type).value;

@@ -1,0 +1,5 @@
+procedure rowproc()
+begin
+    row A r;
+    r.foo = 1;
+end;
