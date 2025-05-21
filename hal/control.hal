@@ -1,0 +1,16 @@
+procedure testLoops(integer n)
+begin
+    integer i;
+    i = 0;
+    while i < n begin
+        i = i + 1;
+    end;
+    for(i = 0; i < 3; i = i + 1)
+    begin
+        n = n + i;
+    end;
+    if n > 10 then
+    begin
+        n = n - 1;
+    end;
+end;
