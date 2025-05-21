@@ -1,0 +1,9 @@
+procedure noproc()
+begin
+end;
+
+procedure test()
+begin
+    overridelangcode;
+    noproc;
+end;

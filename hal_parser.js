@@ -558,23 +558,28 @@ class Parser {
                 }
                 return { type: "CallExpression", callee: idToken.value, args };
             } else {
-                if (!symbolTable.lookup(idToken.value)) {
-                    throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
-                }
-                let node = { type: "Identifier", name: idToken.value };
-                while (this.peek().type === "DOT" || this.peek().type === "LBRACKET") {
-                    if (this.peek().type === "DOT") {
-                        this.expect("DOT");
-                        const prop = this.expect("IDENTIFIER").value;
-                        node = { type: "MemberExpression", object: node, property: prop };
-                    } else {
-                        this.expect("LBRACKET");
-                        const index = this.parseExpressionWithSymbols(symbolTable);
-                        this.expect("RBRACKET");
-                        node = { type: "IndexExpression", array: node, index };
+                const varEntry = symbolTable.lookup(idToken.value);
+                if (varEntry) {
+                    let node = { type: "Identifier", name: idToken.value };
+                    while (this.peek().type === "DOT" || this.peek().type === "LBRACKET") {
+                        if (this.peek().type === "DOT") {
+                            this.expect("DOT");
+                            const prop = this.expect("IDENTIFIER").value;
+                            node = { type: "MemberExpression", object: node, property: prop };
+                        } else {
+                            this.expect("LBRACKET");
+                            const index = this.parseExpressionWithSymbols(symbolTable);
+                            this.expect("RBRACKET");
+                            node = { type: "IndexExpression", array: node, index };
+                        }
                     }
+                    return node;
                 }
-                return node;
+                const entry = this.functionTable.get(idToken.value.toLowerCase());
+                if (entry && entry.params.length === 0 && (entry.kind === "Procedure" || entry.kind === "ExternalProcedure")) {
+                    return { type: "CallExpression", callee: idToken.value, args: [] };
+                }
+                throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
             }
         }
         if (t.type === "NUMBER") {
