@@ -1,0 +1,11 @@
+procedure testGoto(integer n)
+begin
+    integer i;
+    i = 0;
+label1:
+    if i < n then
+    begin
+        i = i + 1;
+        goto label1;
+    end;
+end;

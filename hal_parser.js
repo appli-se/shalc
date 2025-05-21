@@ -224,6 +224,21 @@ class Parser {
     }
 
     parseStatementWithSymbols(symbolTable) {
+        // Label statement: <id> :
+        if (this.peek().type === "IDENTIFIER" && this.peek(1).type === "COLON") {
+            const label = this.expect("IDENTIFIER").value;
+            this.expect("COLON");
+            while (this.accept("SEMICOLON")) {}
+            return { type: "LabelStatement", label };
+        }
+
+        // Goto statement: goto <label>;
+        if (this.peek().type === "GOTO_KEYWORD") {
+            this.expect("GOTO_KEYWORD");
+            const label = this.expect("IDENTIFIER").value;
+            this.accept("SEMICOLON");
+            return { type: "GotoStatement", label };
+        }
         // Local variable declaration: <type> <id>[, <id>]* ;
         if (this.isTypeToken(this.peek())) {
             let decl = this.parseLocalVariableDeclaration();

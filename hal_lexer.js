@@ -8,7 +8,7 @@ const tokenSpecs = [
     { type: "CRLF", regex: /^(\r\n|\r|\n)+/ },
     // Keywords (longest first)
     ...[
-      "otherwise", "procedure", "function", "external", "updating", "global", "begin", "end", "if", "then", "else", "for", "while", "repeat",
+      "otherwise", "procedure", "function", "external", "updating", "global", "begin", "end", "if", "then", "else", "for", "while", "repeat", "goto",
       "var", "array", "record", "of", "return", "switch", "case", "const", "true", "false", "null", "window", "remote", "inner", "outer", "and", "or", "not"
     ].map(kw => ({ type: kw.toUpperCase() + "_KEYWORD", regex: new RegExp("^" + kw + "\\b", "i") })),
     // Types
