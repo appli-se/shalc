@@ -1,6 +1,7 @@
 external function boolean blank(string);
 external procedure blockload(record blockname);
 external function integer len(string);
+external function integer matrowcnt(record namevc);
 external function string 9999 mid(string, integer, integer);
 external function boolean nonblank(string);
 external procedure overridelangcode();
