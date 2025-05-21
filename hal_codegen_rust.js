@@ -34,6 +34,8 @@ function rustType(halType) {
 }
 
 // Track variables declared in the block
+let currentFunctionName = null;
+
 function genBlock(block, paramNames = []) {
     let declared = new Set(paramNames);
     let code = [];
@@ -54,7 +56,11 @@ function genBlock(block, paramNames = []) {
             if (stmt.expr) {
                 code.push(`return ${genExpr(stmt.expr)};`);
             } else {
-                code.push(`return;`);
+                if (currentFunctionName) {
+                    code.push(`return ${currentFunctionName};`);
+                } else {
+                    code.push(`return;`);
+                }
             }
         } else if (stmt.type === "ExpressionStatement") {
             code.push(`${genExpr(stmt.expr)};`);
@@ -131,7 +137,9 @@ function genFunction(fn) {
     const retType = rustType(fn.returnType) || "i32";
     const pub = fn.modifiers && fn.modifiers.includes("GLOBAL_KEYWORD") ? "pub " : "";
     const retVarDecl = `let mut ${fn.name}: ${retType} = ${defaultValueRust(fn.returnType)};`;
+    currentFunctionName = fn.name;
     const body = genBlock(fn.body, fn.params.map(p => p.name).concat(fn.name));
+    currentFunctionName = null;
     const retLine = `return ${fn.name};`;
     return `${pub}fn ${fn.name}(${params}) -> ${retType} {\n${indent(retVarDecl)}\n${indent(body)}\n${indent(retLine)}\n}`;
 }
