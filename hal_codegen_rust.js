@@ -79,6 +79,19 @@ function genBlock(block, paramNames = []) {
             code.push(indent(indent(updateLine)));
             code.push(indent(`}`));
             code.push(`}`);
+        } else if (stmt.type === "SwitchStatement") {
+            const disc = genExpr(stmt.discriminant);
+            let arms = [];
+            for (const cs of stmt.cases) {
+                const pat = cs.values.map(v => genExpr(v)).join(" | ");
+                const body = indent(genBlock({ statements: cs.body }));
+                arms.push(`${pat} => {\n${body}\n}`);
+            }
+            if (stmt.otherwise && stmt.otherwise.length > 0) {
+                const body = indent(genBlock({ statements: stmt.otherwise }));
+                arms.push(`_ => {\n${body}\n}`);
+            }
+            code.push(`match ${disc} {\n${indent(arms.join(",\n"))}\n}`);
         } else {
             code.push(`/* Unhandled statement: ${stmt.type} */`);
         }
