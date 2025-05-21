@@ -1,0 +1,768 @@
+{
+  parserClass="se.appli.intellij.hal.parser.HALParser"
+  parserUtilClass="se.appli.intellij.hal.parser.HALParserUtil"
+
+  implements="se.appli.intellij.hal.psi.HALPsiCompositeElement"
+  extends="se.appli.intellij.hal.psi.impl.HALPsiCompositeElementImpl"
+
+  psiClassPrefix="HAL"
+  psiImplClassSuffix="Impl"
+  psiPackage="se.appli.intellij.hal.psi"
+  psiImplPackage="se.appli.intellij.hal.psi.impl"
+
+  elementTypeHolderClass="se.appli.intellij.hal.psi.HALTypes"
+  elementTypeClass="se.appli.intellij.hal.psi.HALElementType"
+  elementTypeFactory="se.appli.intellij.hal.psi.HALElementType.create"
+  tokenTypeClass="se.appli.intellij.hal.psi.HALTokenType"
+
+  generate=[
+    psi="se.appli.intellij.hal.psi.HALElement"
+    visitor="se.appli.intellij.hal.psi.HALVisitor"
+  ]
+
+  caseInsensitive=true
+  tokens = [
+    WHITE_SPACE='regexp:[ \t\f\r\n]+' // All whitespace EXCEPT newlines
+    // IMPORTANT: Make sure the regex here is compatible with GrammarKit's BNF regex flavor. JFlex handles the real matching.
+    STRING_LITERAL="regexp:('(?:\\\\.|''|[^'\\])*'|\"(?:\\\\.|\"\"|[^\"\\])*\")"
+    COMMENT='regexp://.*|/\*(.|\R)*?\*/|#.*'
+    CRLF_TOKEN='regexp:(\r\n|\r|\n)+' // Explicit CRLF token
+
+    // Keywords
+    AND_KEYWORD="and"
+    ARRAY_KEYWORD="array" // Also a type modifier in parameters
+    BEGIN_KEYWORD="begin"
+    CASE_KEYWORD="case"
+    CONST_KEYWORD="const"
+    ELSE_KEYWORD="else"
+    END_KEYWORD="end"
+    GLOBAL_KEYWORD="global"
+    EXTERNAL_KEYWORD="external"
+    UPDATING_KEYWORD="updating"
+    FALSE_KEYWORD="false"
+    FORWARD_KEYWORD="forward" // New
+    FOR_KEYWORD="for"
+    FUNCTION_KEYWORD="function"
+    GOTO_KEYWORD="goto"
+    IF_KEYWORD="if"
+    INNER_KEYWORD="inner"
+    LOOP_KEYWORD="loop"
+    NOT_KEYWORD="not"
+    NULL_KEYWORD="null"
+    OF_KEYWORD="of"
+    OR_KEYWORD="or"
+    OUTER_KEYWORD="outer"     // New
+    OTHERWISE_KEYWORD="otherwise"
+    PROCEDURE_KEYWORD="procedure"
+    RECORD_KEYWORD="record" // Also a type modifier in parameters
+    REMOTE_KEYWORD="remote"
+    REPEAT_KEYWORD="repeat"
+    RETURN_KEYWORD="return"
+    ROW_KEYWORD="row"       // Also a type modifier in parameters
+    SWITCH_KEYWORD="switch"
+    THEN_KEYWORD="then"
+    TIME_KEYWORD="time"     // Also a type
+    TRANSACTION_KEYWORD="transaction"
+    TRUE_KEYWORD="true"
+    UNTIL_KEYWORD="until"
+    VAR_KEYWORD="var"
+    VECTOR_TYPE_TOKEN="vector" // New, used like 'array'
+    WEBPUBLIC_KEYWORD="webpublic"
+    WHILE_KEYWORD="while"
+    WINDOW_KEYWORD="window"
+
+    // Data Definition Keywords
+    RECORDBEGIN_KEYWORD="RecordBegin"
+    SIMPLERECORDBEGIN_KEYWORD="SimpleRecordBegin"
+    RECORDFIELD_KEYWORD="RecordField"
+    ARRAYBEGIN_KEYWORD="ArrayBegin"
+    ARRAYFIELD_KEYWORD="ArrayField"
+    ENDBLOCK_KEYWORD="EndBlock"
+    ENDARRAY_KEYWORD="EndArray"
+    ENDRECORD_KEYWORD="EndRecord"
+    MAINKEYBEGIN_KEYWORD="MainKeyBegin"
+    KEYBEGIN_KEYWORD="KeyBegin"
+    KEYSEGMENT_KEYWORD="KeySegment"
+    SUBSETKEYBEGIN2_KEYWORD="SubsetKeyBegin2"
+    STOREINBASEKEY_KEYWORD="StoreInBaseKey"
+    APPENDLISTFIELDTOKEYNAME_KEYWORD="AppendListFieldToKeyName"
+    APPENDFIELDTOKEYNAME_KEYWORD="AppendFieldToKeyName"
+    NEWAUTOSYNCREGISTER_KEYWORD="NewAutosyncRegister"
+    IMPEXPLEVEL_KEYWORD="ImpExpLevel"
+    SYNCHRONIZATIONINDEX_KEYWORD="SynchronizationIndex"
+    VIRTUALREGISTER_KEYWORD = "VirtualRegister"
+    FIELDISLOCATION_KEYWORD="FieldIsLocation"
+    FIELDISTRANSDATE_KEYWORD="FieldIsTransDate"
+    FIELD_IS_USER_KEYWORD="FieldIsUser"
+    FIELD_IS_GROUP_KEYWORD="FieldIsGroup"
+    FIELD_IS_INVALID_KEYWORD="FieldIsInvalid"
+    SERIALNOBLOCK_KEYWORD="SerialNoBlock"
+    BLOCKBEGIN_KEYWORD="BlockBegin"
+    BLOCKFORALLCOMPANIES_KEYWORD="BlockForAllCompanies"
+    CACHEBLOCKINCLIENT_KEYWORD="CacheBlockInClient"
+    BLOCKINSERVER_KEYWORD="BlockInServer"
+    LOADBLOCKONSTARTUP_KEYWORD="LoadBlockOnStartup"
+    NEWAUTOSYNCBLOCK_KEYWORD="NewAutosyncBlock"
+
+    // Window Keywords
+    WTAG_KEYWORD="wtag"
+    WINDOWBEGIN_KEYWORD="WindowBegin"
+    SPAWNCLASS_KEYWORD="SpawnClass"
+    SETWRECT_KEYWORD="SetWRect"
+    SIZEABLE_KEYWORD="Sizeable"
+    USEVIEW_KEYWORD="UseView"
+    RECORDLIST_KEYWORD="RecordList"
+    RLCOLKEY_KEYWORD="RlColKey"
+    SEARCHFIELD_KEYWORD="SearchField"
+    ENDWINDOW_KEYWORD="EndWindow"
+
+    // Primitive Type Tokens
+    AREA_TYPE_TOKEN="area"    // New
+    BOOLEAN_TYPE_TOKEN="boolean"
+    DATE_TYPE_TOKEN="date"
+    INTEGER_TYPE_TOKEN="integer"
+    LONGINT_TYPE_TOKEN="longint"
+    STRING_TYPE_TOKEN="string"
+    ROUNDMODE_TYPE_TOKEN="roundmode"
+    VAL_TYPE_TOKEN="val"
+    ULONG64_TYPE_TOKEN = "ULong64"
+    // TIME_KEYWORD is already listed as a keyword
+
+    // M4 SDK Type Tokens
+    M4CODE_TYPE="M4Code"
+    M4STR_TYPE="M4Str"
+    M4INT_TYPE="M4Int"
+    M4VAL_TYPE="M4Val"
+    M4USTR_TYPE="M4UStr"
+    M4MATRIX_TYPE="M4Matrix"
+    M4DATE_TYPE="M4Date"
+    M4LONG_TYPE="M4Long"
+    M4NLONG_TYPE="M4NLong"
+    M4MARK_TYPE="M4Mark"
+    M4LIST_TYPE="M4List"
+    M4PRCSTR_TYPE="M4PrcStr"
+    M4PACKEDMATRIX_TYPE="M4PackedMatrix"
+    M4PHONE_TYPE="M4PhoneNo"
+    M4TEXT_TYPE="M4TextField"
+    M4RATE_TYPE="M4Rate"
+    M4QTY_TYPE="M4Qty"
+    M4UVAL_TYPE="M4UVal"
+    M45VAL_TYPE="M45Val"
+    M423VAL_TYPE="M423Val"
+    M41VAL_TYPE="M41Val"
+    M40VAL_TYPE="M40Val"
+    M4TIME_TYPE="M4Time"
+    M4STIME_TYPE="M4STime"
+    M4UUID_TYPE="M4UUID"    // New (can also be token "uuid")
+    XML_TYPE_TOKEN="xml"    // New
+    M4DUMMY_TYPE="M4Dummy"
+    M4PRESENTATION="M4StrSet"
+    M4MATRIXCOL="M4Set"
+
+    UUID_TOKEN="uuid"       // Specific token if 'uuid' is used as a keyword itself, not just a type name
+
+    // Literals
+    NUMBER_TOKEN='regexp:[0-9]+(\.[0-9]*)?'
+    IDENTIFIER='regexp:[A-Za-z_][A-Za-z0-9_]*'
+
+    // Operators & Punctuation
+    PLUS="+"
+    MINUS="-"
+    MULTIPLY="*"
+    DIVIDE="/"
+    EQUALS="="          // Used for assignment and FOR loop
+    EQEQ="=="           // Used for equality comparison
+    NOT_EQUALS="<>"
+    NOT_EQUALS_ALT="!="
+    NOT_OP="!"
+    LESS="<"
+    LESS_OR_EQUAL="<="
+    GREATER=">"
+    GREATER_OR_EQUAL=">="
+    // ASSIGN=":=" // Not used based on examples
+    LPAREN="("
+    RPAREN=")"
+    LBRACKET="["
+    RBRACKET="]"
+    DOT="."
+    COMMA=","
+    COLON=":"
+    SEMICOLON=";"
+    AMPERSAND="&"
+  ]
+  spaces = WHITE_SPACE
+  comments = COMMENT
+
+  implements("reference_expression")="se.appli.intellij.hal.psi.HALReferenceElement"
+  mixin("reference_expression")="se.appli.intellij.hal.psi.impl.HALReferenceExpressionMixin"
+  implements("halFile")="se.appli.intellij.hal.psi.HALFile"
+  extends("halFile")="se.appli.intellij.hal.psi.impl.HALFileImpl"
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Root Rule
+///////////////////////////////////////////////////////////////////////////////
+halFile ::= item_* { pin=1 }
+
+private item_ ::= (import_declaration
+                | subprogram_declaration
+                | data_structure_definition
+                | window_declaration
+                | anonymous_block
+                | comment_item
+                | block_statement
+                | crlf_item)
+                {recoverWhile=item_recover}
+
+private item_recover ::= !(FUNCTION_KEYWORD | PROCEDURE_KEYWORD | FORWARD_KEYWORD | VAR_KEYWORD | RECORD_KEYWORD | RECORDBEGIN_KEYWORD | SIMPLERECORDBEGIN_KEYWORD | BLOCKBEGIN_KEYWORD | BEGIN_KEYWORD | WINDOW_KEYWORD | COMMENT | CRLF_TOKEN | GLOBAL_KEYWORD | EXTERNAL_KEYWORD | UPDATING_KEYWORD | INNER_KEYWORD | REMOTE_KEYWORD | OUTER_KEYWORD | EOF)
+
+private comment_item ::= COMMENT
+private crlf_item ::= CRLF_TOKEN
+
+anonymous_block ::= BEGIN_KEYWORD general_statement_list (RETURN_KEYWORD stmt_terminator*)? END_KEYWORD stmt_terminator* {
+  pin=1
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Declarations
+///////////////////////////////////////////////////////////////////////////////
+
+subprogram_declaration ::= function_declaration_content
+                         | procedure_declaration_content
+
+import_declaration ::= (import_modifier+) (function_declaration_content_no_body | procedure_declaration_content_no_body) stmt_terminator*
+function_declaration_content_no_body ::= modifier* FUNCTION_KEYWORD (reference_expression | type_specification reference_expression) parameter_list? {
+  pin("FUNCTION_KEYWORD")=1
+}
+procedure_declaration_content_no_body ::= modifier* PROCEDURE_KEYWORD reference_expression parameter_list? {
+  pin("PROCEDURE_KEYWORD")=1
+}
+
+function_declaration_content ::= modifier* FUNCTION_KEYWORD (function_name_identifier | type_specification function_name_identifier) parameter_list? subprogram_body {
+ implements="se.appli.intellij.hal.psi.HALNamedElement"
+ mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+ pin("FUNCTION_KEYWORD")=1
+}
+
+procedure_declaration_content ::= modifier* PROCEDURE_KEYWORD procedure_name_identifier parameter_list? subprogram_body {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+  pin("PROCEDURE_KEYWORD")=1
+}
+private import_modifier ::= (FORWARD_KEYWORD | EXTERNAL_KEYWORD | INNER_KEYWORD | REMOTE_KEYWORD | OUTER_KEYWORD)
+private modifier ::= (EXTERNAL_KEYWORD | GLOBAL_KEYWORD | UPDATING_KEYWORD | INNER_KEYWORD | REMOTE_KEYWORD | OUTER_KEYWORD | WEBPUBLIC_KEYWORD)
+
+subprogram_body ::= block_body | stmt_terminator
+
+local_variable_declaration ::= (ARRAY_KEYWORD?) type_specification id_list stmt_terminator? {
+  mixin="se.appli.intellij.hal.psi.impl.HALVariableDeclarationMixin"
+  pin=2
+}
+
+id_list ::= id_as_variable_name (COMMA id_as_variable_name)*
+
+///////////////////////////////////////////////////////////////////////////////
+// Data Structure Definitions (RecordBegin, BlockBegin, record keyword)
+///////////////////////////////////////////////////////////////////////////////
+data_structure_definition ::= record_begin_definition
+                            | block_begin_definition
+                            | record_keyword_definition
+
+record_keyword_definition ::= RECORD_KEYWORD record_definition_identifier (COMMA record_definition_identifier)* stmt_terminator*
+
+record_begin_definition ::= record_begin_directive LPAREN definition_name_identifier COMMA definition_argument COMMA definition_argument RPAREN stmt_terminator*
+                            record_body_element* ENDRECORD_KEYWORD stmt_terminator* {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+  pin=1
+}
+
+private record_begin_directive ::= RECORDBEGIN_KEYWORD | SIMPLERECORDBEGIN_KEYWORD
+
+block_begin_definition ::= BLOCKBEGIN_KEYWORD LPAREN definition_name_identifier COMMA definition_argument COMMA definition_argument RPAREN stmt_terminator*
+                           block_body_element* (ENDBLOCK_KEYWORD|END_KEYWORD) stmt_terminator* {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+  pin("BLOCKBEGIN_KEYWORD")=1
+}
+
+private definition_argument ::= expr | MINUS
+
+record_body_element ::= record_field_definition_stmt
+                      | record_directive_stmt
+                      | key_definition_block_stmt
+                      | key_definition_stmt
+                      | array_definition_block_stmt
+                      | stmt_terminator
+                      | statement_item_wrapper
+
+
+block_body_element ::= record_field_definition_stmt
+                     | block_directive_stmt
+                     | array_definition_block_stmt
+                     | stmt_terminator
+                     | statement_item_wrapper
+
+private record_field_definition_stmt ::= record_field_definition stmt_terminator*
+private array_definition_block_stmt ::= array_definition_block stmt_terminator*
+
+record_field_definition ::= RECORDFIELD_KEYWORD LPAREN
+                              record_field_name_identifier COMMA
+                              type_specification COMMA
+                              field_param
+                              (COMMA field_param)*
+                              (COMMA)?
+                              stmt_terminator*
+                            RPAREN {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+record_field_name_identifier ::=
+        record_field_name_core (LBRACKET NUMBER_TOKEN RBRACKET)?    //  ← new
+
+/* original alternatives – untouched -------------------------------------- */
+private record_field_name_core ::= IDENTIFIER
+                        | RECORD_KEYWORD
+                        | WINDOW_KEYWORD
+                        | AREA_TYPE_TOKEN
+                        | BOOLEAN_TYPE_TOKEN
+                        | INTEGER_TYPE_TOKEN
+                        | LONGINT_TYPE_TOKEN
+                        | ROUNDMODE_TYPE_TOKEN
+                        | STRING_TYPE_TOKEN
+                        | VAL_TYPE_TOKEN
+                        | ULONG64_TYPE_TOKEN
+                        | DATE_TYPE_TOKEN
+                        | UUID_TOKEN
+                        | TIME_KEYWORD
+                        | ROW_KEYWORD
+                        | FUNCTION_KEYWORD
+                        | VAR_KEYWORD
+
+array_field_definition ::= ARRAYFIELD_KEYWORD LPAREN
+                             record_field_name_identifier COMMA
+                             type_specification           COMMA
+                             field_param
+                             (COMMA field_param)*
+                             (COMMA)?
+                             stmt_terminator*
+                           RPAREN
+{
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+  pin=1
+}
+
+/* ------------------------------------------------------------------------- */
+
+array_block_element ::= array_field_definition
+                      | record_field_definition        /* allowed inside ArrayBegin */
+                      | key_definition_block_stmt
+                      | comment_item
+                      | crlf_item
+                      | statement_item                 /* fall-back  */
+
+array_block_stmt     ::= array_block_element stmt_terminator*
+
+array_definition_block ::= ARRAYBEGIN_KEYWORD LPAREN
+                             definition_name_identifier
+                             (COMMA definition_argument)* RPAREN
+                           stmt_terminator*
+                           array_block_stmt*
+                           ENDARRAY_KEYWORD
+                           stmt_terminator*
+{
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+  pin=1
+}
+
+
+main_key_begin_directive ::= MAINKEYBEGIN_KEYWORD LPAREN (key_name_identifier | NUMBER_TOKEN) (COMMA expr)* RPAREN stmt_terminator*
+{ pin = 1; }
+key_begin_directive ::= KEYBEGIN_KEYWORD (LPAREN (key_name_identifier | NUMBER_TOKEN) (COMMA expr)* RPAREN)? stmt_terminator*
+{ pin = 1; }
+key_segment_directive ::= KEYSEGMENT_KEYWORD LPAREN (record_field_name_identifier | NUMBER_TOKEN) RPAREN stmt_terminator*
+{ pin = 1; }
+subsetkey_segment_directive ::= SUBSETKEYBEGIN2_KEYWORD LPAREN (record_field_name_identifier | NUMBER_TOKEN) RPAREN stmt_terminator*
+{ pin = 1; }
+
+key_name_identifier ::= IDENTIFIER
+                     | RECORD_KEYWORD
+                     | WINDOW_KEYWORD
+                     | AREA_TYPE_TOKEN
+                     | BOOLEAN_TYPE_TOKEN
+                     | INTEGER_TYPE_TOKEN
+                     | LONGINT_TYPE_TOKEN
+                     | ROUNDMODE_TYPE_TOKEN
+                     | STRING_TYPE_TOKEN
+                     | VAL_TYPE_TOKEN
+                     | ULONG64_TYPE_TOKEN
+                     | DATE_TYPE_TOKEN
+                     | UUID_TOKEN
+                     | TIME_KEYWORD
+                     | ROW_KEYWORD
+                     | FUNCTION_KEYWORD8
+
+private key_definition_block_stmt ::= main_key_begin_directive key_definition_stmt*
+                                    | key_begin_directive key_definition_stmt*
+                                    | key_segment_directive key_definition_stmt*
+                                    | subsetkey_segment_directive key_definition_stmt*
+{ pin = 1; }
+
+private record_directive_stmt ::= record_directive stmt_terminator*
+
+record_directive ::= serial_no_block_directive
+                   | field_is_trans_date_directive
+                   | field_is_location_directive
+                   | field_is_user_directive
+                   | field_is_group_directive
+                   | field_is_invalid_directive
+                   | new_autosync_register_directive
+                   | imp_exp_level_directive
+                   | synchronization_index_directive
+                   | virtual_register_directive
+
+private block_directive_stmt ::= block_directive stmt_terminator*
+
+private key_definition_stmt ::= key_definition stmt_terminator*
+
+key_definition ::= subset_key_begin_directive
+                 | store_in_base_key_directive
+                 | append_list_field_to_key_name_directive
+                 | append_field_to_key_name_directive
+                 | synchronization_index_directive
+
+block_directive ::= imp_exp_level_directive
+                  | block_for_all_companies_directive
+                  | cache_block_in_client_directive
+                  | block_in_server_directive
+                  | load_block_on_startup_directive
+                  | new_autosync_block_directive
+
+serial_no_block_directive ::= SERIALNOBLOCK_KEYWORD LPAREN id RPAREN
+field_is_trans_date_directive ::= FIELDISTRANSDATE_KEYWORD LPAREN id RPAREN
+field_is_location_directive ::= FIELDISLOCATION_KEYWORD LPAREN id RPAREN
+field_is_user_directive ::= FIELD_IS_USER_KEYWORD LPAREN id RPAREN
+field_is_group_directive ::= FIELD_IS_GROUP_KEYWORD LPAREN id RPAREN
+field_is_invalid_directive ::= FIELD_IS_INVALID_KEYWORD LPAREN id RPAREN
+new_autosync_register_directive ::= NEWAUTOSYNCREGISTER_KEYWORD LPAREN expr COMMA expr RPAREN
+imp_exp_level_directive ::= IMPEXPLEVEL_KEYWORD LPAREN expr RPAREN
+virtual_register_directive ::= VIRTUALREGISTER_KEYWORD
+synchronization_index_directive ::= SYNCHRONIZATIONINDEX_KEYWORD (LPAREN RPAREN)?
+subset_key_begin_directive ::= SUBSETKEYBEGIN2_KEYWORD (LPAREN id RPAREN)?
+store_in_base_key_directive ::= STOREINBASEKEY_KEYWORD
+append_list_field_to_key_name_directive ::= APPENDLISTFIELDTOKEYNAME_KEYWORD LPAREN id RPAREN
+append_field_to_key_name_directive ::= APPENDFIELDTOKEYNAME_KEYWORD LPAREN id RPAREN
+block_for_all_companies_directive ::= BLOCKFORALLCOMPANIES_KEYWORD
+cache_block_in_client_directive ::= CACHEBLOCKINCLIENT_KEYWORD | "CacaheBlockInClient"
+block_in_server_directive ::= BLOCKINSERVER_KEYWORD
+load_block_on_startup_directive ::= LOADBLOCKONSTARTUP_KEYWORD
+new_autosync_block_directive ::= NEWAUTOSYNCBLOCK_KEYWORD (LPAREN id RPAREN)?
+
+///////////////////////////////////////////////////////////////////////////////
+// Statements & Blocks
+///////////////////////////////////////////////////////////////////////////////
+private block_body ::= block_statement stmt_terminator* {
+  pin=1
+}
+
+private stmt_terminator ::=              // one or more “end of line” markers
+        ( SEMICOLON                     // explicit ‘;’
+        | comment_item                  //   // comment
+        | crlf_item                     //   blank line / line break
+        )
+
+general_statement_list ::= statement_item_wrapper*
+private statement_item_wrapper ::= (
+    label_statement
+  | goto_statement
+  | statement_item stmt_terminator*
+)
+
+statement_item ::= control_structure
+                 | assignment_statement
+                 | expr_statement
+                 | return_statement
+                 | block_statement
+                 | transaction_statement
+                 | local_variable_declaration
+                 | data_structure_definition
+                 | record_field_definition
+                 | array_field_definition
+                 | key_definition_block_stmt
+                 | array_definition_block
+                 | record_directive
+                 | block_directive
+                 | end_block_stmt
+                 | end_record_stmt
+
+block_begin_stmt  ::= BLOCKBEGIN_KEYWORD
+                      LPAREN definition_name_identifier
+                      (COMMA definition_argument)* RPAREN
+
+record_begin_stmt ::= (RECORDBEGIN_KEYWORD | SIMPLERECORDBEGIN_KEYWORD)
+                      LPAREN definition_name_identifier
+                      (COMMA definition_argument)* RPAREN
+end_block_stmt    ::= ENDBLOCK_KEYWORD
+end_record_stmt   ::= ENDRECORD_KEYWORD
+
+block_statement ::= BEGIN_KEYWORD general_statement_list END_KEYWORD {
+  pin=1
+}
+
+assignment_statement ::= postfix_expr EQUALS expr {
+  mixin="se.appli.intellij.hal.psi.impl.HALAssignmentStatementMixin"
+  pin("EQUALS")=2
+}
+
+expr_statement ::= postfix_expr stmt_terminator | expr
+
+return_statement ::= RETURN_KEYWORD {
+  pin=1
+}
+
+label_statement ::= label_identifier COLON stmt_terminator*
+goto_statement ::= GOTO_KEYWORD reference_expression stmt_terminator {
+  mixin="se.appli.intellij.hal.psi.impl.HALGotoStatementMixin"
+  pin=1
+}
+
+transaction_statement ::= TRANSACTION_KEYWORD (statement_item stmt_terminator* | block_statement)? {
+  pin=1
+}
+
+control_structure ::= if_statement | switch_statement_rule | while_loop | for_loop
+
+if_statement ::= IF_KEYWORD expr if_then_block else_part? {
+  pin("IF_KEYWORD")=1
+}
+single_stmt_or_block ::= block_statement | statement_item_wrapper
+if_then_block ::= THEN_KEYWORD single_stmt_or_block | single_stmt_or_block
+else_part     ::= ELSE_KEYWORD single_stmt_or_block         { pin("ELSE_KEYWORD") = 1 }
+
+switch_statement_rule ::= SWITCH_KEYWORD expr_with_optional_parens
+                             (BEGIN_KEYWORD|OF_KEYWORD)
+                             switch_case_clause*
+                             otherwise_clause? END_KEYWORD {
+  pin("SWITCH_KEYWORD")=1
+}
+switch_case_clause ::= CASE_KEYWORD
+                       expr_list_for_case
+                       COLON
+                       general_statement_list?
+                       stmt_terminator*                   {
+  pin("CASE_KEYWORD") = 1
+}
+otherwise_clause ::= OTHERWISE_KEYWORD
+                     general_statement_list?
+                     stmt_terminator*
+private expr_list_for_case ::= expr (COMMA expr)*
+
+while_loop ::= WHILE_KEYWORD expr_with_optional_parens BEGIN_KEYWORD general_statement_list END_KEYWORD {
+  pin("WHILE_KEYWORD")=1
+}
+private expr_with_optional_parens ::= LPAREN expr RPAREN | expr
+
+for_loop ::= FOR_KEYWORD LPAREN assignment_statement SEMICOLON expr SEMICOLON assignment_statement RPAREN block_statement {
+  pin("FOR_KEYWORD")=1
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Expressions
+///////////////////////////////////////////////////////////////////////////////
+private field_param ::=
+      expr_or_placeholder
+    | comment_item
+    | crlf_item
+expr_or_placeholder ::= expr | MINUS
+expr ::= logic_or_expr
+private logic_or_expr ::= logic_and_expr (OR_KEYWORD logic_and_expr)*
+private logic_and_expr ::= comparison_expr (AND_KEYWORD comparison_expr)*
+private comparison_expr ::= additive_expr (comparison_operator additive_expr)?
+private comparison_operator ::= EQEQ | NOT_EQUALS_ALT | EQUALS | NOT_EQUALS | LESS | LESS_OR_EQUAL | GREATER | GREATER_OR_EQUAL // EQUALS for comparison too in some contexts
+
+private additive_expr ::= multiplicative_expr (additive_operator multiplicative_expr)*
+private additive_operator ::= PLUS | MINUS | AMPERSAND
+
+private multiplicative_expr ::= unary_expr (multiplicative_operator unary_expr)*
+private multiplicative_operator ::= MULTIPLY | DIVIDE
+
+unary_expr ::= (unary_operator unary_expr) | postfix_expr
+private unary_operator ::= PLUS | MINUS | NOT_KEYWORD | NOT_OP | NOT_EQUALS_ALT
+
+postfix_expr ::= primary_expr postfix_suffix*
+postfix_suffix ::= call_suffix | record_access_suffix | array_access_suffix
+
+primary_expr ::= reference_expression | literal_expression | paren_expr
+paren_expr ::= LPAREN expr RPAREN {pin=1}
+
+literal_expression ::= number_lit | string_lit | boolean_lit | null_lit
+number_lit ::= NUMBER_TOKEN
+boolean_lit ::= TRUE_KEYWORD | FALSE_KEYWORD
+string_lit ::= STRING_LITERAL
+null_lit ::= NULL_KEYWORD
+
+reference_expression ::= (function_modifier DOT)? (id | sdk_m4_type) {
+  implements="se.appli.intellij.hal.psi.HALReferenceElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALReferenceExpressionMixin"
+}
+
+function_modifier ::= INNER_KEYWORD
+
+array_access_suffix ::= LBRACKET expr RBRACKET {pin=1}
+record_access_suffix ::= DOT field_name_identifier {pin=1}
+call_suffix ::= LPAREN argument_list? RPAREN {
+  pin=1
+  mixin="se.appli.intellij.hal.psi.impl.HALCallSuffixMixin"
+  methods=[
+    getReferenceExpression
+    getArguments
+    getFunctionName
+  ]
+}
+argument_list ::= expr (COMMA expr)*
+
+///////////////////////////////////////////////////////////////////////////////
+// Types
+///////////////////////////////////////////////////////////////////////////////
+type_specification ::=  basic_type
+                      | sdk_m4_type
+                      | array_type_spec
+                      | vector_type_spec
+                      | record_keyword_type_spec
+                      | row_keyword_type_spec
+                      | user_defined_type_ref {
+  mixin="se.appli.intellij.hal.psi.impl.HALTypeMixin"
+}
+
+basic_type ::= area_type_rule | boolean_type_rule | integer_type_rule | longint_type_rule | roundmode_type_rule | string_type_rule | val_type_rule | ulong64_type_rule | date_type_rule | time_type_rule
+area_type_rule ::= AREA_TYPE_TOKEN
+boolean_type_rule ::= BOOLEAN_TYPE_TOKEN
+integer_type_rule ::= INTEGER_TYPE_TOKEN
+longint_type_rule ::= LONGINT_TYPE_TOKEN
+string_type_rule ::= STRING_TYPE_TOKEN (NUMBER_TOKEN)?
+roundmode_type_rule ::= ROUNDMODE_TYPE_TOKEN
+val_type_rule ::= VAL_TYPE_TOKEN
+ulong64_type_rule ::= ULONG64_TYPE_TOKEN
+date_type_rule ::= DATE_TYPE_TOKEN
+time_type_rule ::= TIME_KEYWORD
+
+sdk_m4_type ::= M4CODE_TYPE | M4STR_TYPE | M4INT_TYPE | M4VAL_TYPE | M4USTR_TYPE | M4MATRIX_TYPE
+           | M4DATE_TYPE | M4LONG_TYPE | M4NLONG_TYPE | M4MARK_TYPE | M4LIST_TYPE | M4PRCSTR_TYPE
+           | M4PACKEDMATRIX_TYPE | M4PHONE_TYPE | M4TEXT_TYPE | M4RATE_TYPE | M4QTY_TYPE
+           | M4UVAL_TYPE | M45VAL_TYPE | M423VAL_TYPE | M41VAL_TYPE | M40VAL_TYPE
+           | M4TIME_TYPE | M4STIME_TYPE | M4UUID_TYPE | XML_TYPE_TOKEN | UUID_TOKEN
+           | M4DUMMY_TYPE | M4PRESENTATION | M4MATRIXCOL
+
+array_type_spec ::= ARRAY_KEYWORD (OF_KEYWORD? (basic_type | sdk_m4_type | user_defined_type_ref)) {
+  extends="se.appli.intellij.hal.psi.HALTypeSpecificationImpl"
+}
+vector_type_spec ::= VECTOR_TYPE_TOKEN (OF_KEYWORD? (basic_type | sdk_m4_type | user_defined_type_ref)) {
+  extends="se.appli.intellij.hal.psi.HALTypeSpecificationImpl"
+}
+private record_keyword_type_spec ::= RECORD_KEYWORD user_defined_type_ref
+private row_keyword_type_spec ::= ROW_KEYWORD user_defined_type_ref
+
+user_defined_type_ref ::= id {
+  mixin="se.appli.intellij.hal.psi.impl.HALReferenceExpressionMixin"
+  implements="se.appli.intellij.hal.psi.HALReferenceElement"
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Identifiers
+///////////////////////////////////////////////////////////////////////////////
+id ::= IDENTIFIER
+function_name_identifier ::= id {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+procedure_name_identifier ::= id {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+id_as_variable_name ::= id {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+parameter_name_identifier ::= id {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+definition_name_identifier ::= id
+field_name_identifier ::=
+        field_name_core (LBRACKET NUMBER_TOKEN RBRACKET)?
+
+private field_name_core ::= IDENTIFIER
+                 | RECORD_KEYWORD
+                 | WINDOW_KEYWORD
+                 | AREA_TYPE_TOKEN
+                 | BOOLEAN_TYPE_TOKEN
+                 | INTEGER_TYPE_TOKEN
+                 | LONGINT_TYPE_TOKEN
+                 | ROUNDMODE_TYPE_TOKEN
+                 | STRING_TYPE_TOKEN
+                 | VAL_TYPE_TOKEN
+                 | ULONG64_TYPE_TOKEN
+                 | DATE_TYPE_TOKEN
+                 | UUID_TOKEN
+                 | TIME_KEYWORD
+                 | ROW_KEYWORD
+                 | FUNCTION_KEYWORD
+record_definition_identifier ::= id {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+label_identifier ::= id {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Parameter Lists
+///////////////////////////////////////////////////////////////////////////////
+parameter_list ::= LPAREN RPAREN | LPAREN (parameter_declaration (COMMA parameter_declaration)*)? RPAREN {
+  pin=1
+}
+
+parameter_declaration ::= parameter_modifier* type_specification (parameter_name_identifier)? {
+  pin=1
+  recoverWhile=parameter_recover
+}
+private parameter_modifier ::= (VAR_KEYWORD | ARRAY_KEYWORD)+ // Modifiers like 'var'
+private parameter_recover ::= !(COMMA | RPAREN)
+
+///////////////////////////////////////////////////////////////////////////////
+// Window Declarations
+///////////////////////////////////////////////////////////////////////////////
+window_declaration ::= WINDOW_KEYWORD id COLON NUMBER_TOKEN wtag_statement_list? window_block_body stmt_terminator* {
+  implements="se.appli.intellij.hal.psi.HALNamedElement"
+  mixin="se.appli.intellij.hal.psi.impl.HALNamedElementMixin"
+}
+private wtag_statement_list ::= wtag_statement (COMMA wtag_statement)*
+wtag_statement ::= WTAG_KEYWORD LPAREN expr COMMA expr RPAREN
+
+window_block_body ::= BEGIN_KEYWORD window_statement_item* ENDWINDOW_KEYWORD
+private window_statement_item ::= window_statement stmt_terminator*
+
+window_statement ::= window_begin_statement
+                   | spawn_class_statement
+                   | set_w_rect_statement
+                   | sizeable_statement
+                   | use_view_statement
+                   | record_list_statement
+                   | rl_col_key_statement
+                   | search_field_statement
+                   | comment_item
+                   | crlf_item
+
+window_begin_statement ::= WINDOWBEGIN_KEYWORD LPAREN expr COMMA id COMMA expr COMMA expr RPAREN
+spawn_class_statement ::= SPAWNCLASS_KEYWORD LPAREN id RPAREN
+set_w_rect_statement ::= SETWRECT_KEYWORD LPAREN expr COMMA expr COMMA expr COMMA expr RPAREN
+sizeable_statement ::= SIZEABLE_KEYWORD LPAREN expr COMMA expr COMMA expr COMMA expr RPAREN
+use_view_statement ::= USEVIEW_KEYWORD LPAREN id RPAREN
+record_list_statement ::= RECORDLIST_KEYWORD LPAREN expr COMMA expr COMMA expr COMMA expr RPAREN
+rl_col_key_statement ::= RLCOLKEY_KEYWORD LPAREN expr COMMA expr COMMA string_lit COMMA id COMMA boolean_lit COMMA id RPAREN
+search_field_statement ::= SEARCHFIELD_KEYWORD LPAREN string_lit RPAREN
+
+
