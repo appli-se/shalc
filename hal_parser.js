@@ -60,7 +60,8 @@ class Parser {
             token.type.endsWith('_TYPE') ||
             token.type === 'TIME_KEYWORD' ||
             token.type === 'ROW_KEYWORD' ||
-            token.type === 'RECORD_KEYWORD'
+            token.type === 'RECORD_KEYWORD' ||
+            token.type === 'ARRAY_KEYWORD'
         );
     }
 
@@ -250,8 +251,18 @@ class Parser {
         // Assignment: <id>[.field]* = <expr> ;
         if (this.peek().type === "IDENTIFIER") {
             let lookahead = 1;
-            while (this.peek(lookahead).type === "DOT" && this.peek(lookahead + 1).type === "IDENTIFIER") {
-                lookahead += 2;
+            while (true) {
+                if (this.peek(lookahead).type === "DOT" && this.peek(lookahead + 1).type === "IDENTIFIER") {
+                    lookahead += 2;
+                } else if (this.peek(lookahead).type === "LBRACKET") {
+                    lookahead++;
+                    while (this.peek(lookahead).type !== "RBRACKET" && this.peek(lookahead).type !== "EOF") {
+                        lookahead++;
+                    }
+                    if (this.peek(lookahead).type === "RBRACKET") lookahead++;
+                } else {
+                    break;
+                }
             }
             if (this.peek(lookahead).type === "EQUALS") {
                 const assign = this.parseAssignmentExpr(symbolTable);
@@ -297,6 +308,15 @@ class Parser {
             throw new ParseError(`Expected type but got ${token.type}`, token);
         }
 
+        if (token.type === "ARRAY_KEYWORD") {
+            this.expect("ARRAY_KEYWORD");
+            if (this.peek().type === "OF_KEYWORD") {
+                this.expect("OF_KEYWORD");
+            }
+            const elementType = this.parseType(false);
+            return { base: "array", elementType };
+        }
+
         // Handle "record <TypeName>" and "row <TypeName>" specially
         if (token.type === "RECORD_KEYWORD") {
             this.expect("RECORD_KEYWORD");
@@ -323,7 +343,15 @@ class Parser {
     }
 
     parseLocalVariableDeclaration() {
+        let isArrayModifier = false;
+        if (this.peek().type === "ARRAY_KEYWORD") {
+            this.expect("ARRAY_KEYWORD");
+            isArrayModifier = true;
+        }
         let halType = this.parseType(true);
+        if (isArrayModifier) {
+            halType = { base: "array", elementType: halType };
+        }
         let ids = [this.expect("IDENTIFIER").value];
         while (this.accept("COMMA")) {
             ids.push(this.expect("IDENTIFIER").value);
@@ -423,10 +451,17 @@ class Parser {
             throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
         }
         let node = { type: "Identifier", name: idToken.value };
-        while (this.peek().type === "DOT") {
-            this.expect("DOT");
-            const prop = this.expect("IDENTIFIER").value;
-            node = { type: "MemberExpression", object: node, property: prop };
+        while (this.peek().type === "DOT" || this.peek().type === "LBRACKET") {
+            if (this.peek().type === "DOT") {
+                this.expect("DOT");
+                const prop = this.expect("IDENTIFIER").value;
+                node = { type: "MemberExpression", object: node, property: prop };
+            } else {
+                this.expect("LBRACKET");
+                const index = this.parseExpressionWithSymbols(symbolTable);
+                this.expect("RBRACKET");
+                node = { type: "IndexExpression", array: node, index };
+            }
         }
         return node;
     }
@@ -513,10 +548,17 @@ class Parser {
                     throw new ParseError(`Variable '${idToken.value}' is not declared`, idToken);
                 }
                 let node = { type: "Identifier", name: idToken.value };
-                while (this.peek().type === "DOT") {
-                    this.expect("DOT");
-                    const prop = this.expect("IDENTIFIER").value;
-                    node = { type: "MemberExpression", object: node, property: prop };
+                while (this.peek().type === "DOT" || this.peek().type === "LBRACKET") {
+                    if (this.peek().type === "DOT") {
+                        this.expect("DOT");
+                        const prop = this.expect("IDENTIFIER").value;
+                        node = { type: "MemberExpression", object: node, property: prop };
+                    } else {
+                        this.expect("LBRACKET");
+                        const index = this.parseExpressionWithSymbols(symbolTable);
+                        this.expect("RBRACKET");
+                        node = { type: "IndexExpression", array: node, index };
+                    }
                 }
                 return node;
             }
