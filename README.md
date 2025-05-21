@@ -38,3 +38,8 @@ let mut a: A = Default::default();
 
 Field accesses like `a.foo` are allowed without validating whether the field
 exists in the record.
+
+### Switch Statements
+
+Switch statements following the HAL syntax are supported and are translated into
+Rust `match` expressions.

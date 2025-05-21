@@ -266,6 +266,10 @@ class Parser {
         if (this.peek().type === "FOR_KEYWORD") {
             return this.parseFor(symbolTable);
         }
+        // Switch statement
+        if (this.peek().type === "SWITCH_KEYWORD") {
+            return this.parseSwitch(symbolTable);
+        }
         // Expression statement (like a function call)
         let expr = this.parseExpressionWithSymbols(symbolTable);
         this.accept("SEMICOLON");
@@ -342,6 +346,47 @@ class Parser {
         this.expect("RPAREN");
         const body = this.parseBlock([], symbolTable);
         return { type: "ForStatement", init, condition, update, body };
+    }
+
+    parseSwitch(symbolTable) {
+        this.expect("SWITCH_KEYWORD");
+        let discriminant;
+        if (this.accept("LPAREN")) {
+            discriminant = this.parseExpressionWithSymbols(symbolTable);
+            this.expect("RPAREN");
+        } else {
+            discriminant = this.parseExpressionWithSymbols(symbolTable);
+        }
+        // Optional BEGIN or OF keyword
+        if (this.peek().type === "BEGIN_KEYWORD" || this.peek().type === "OF_KEYWORD") {
+            this.pos++;
+        }
+        const cases = [];
+        while (this.peek().type === "CASE_KEYWORD") {
+            this.expect("CASE_KEYWORD");
+            const values = [this.parseExpressionWithSymbols(symbolTable)];
+            while (this.accept("COMMA")) {
+                values.push(this.parseExpressionWithSymbols(symbolTable));
+            }
+            this.expect("COLON");
+            const body = [];
+            while (!["CASE_KEYWORD", "OTHERWISE_KEYWORD", "END_KEYWORD", "EOF"].includes(this.peek().type)) {
+                body.push(this.parseStatementWithSymbols(symbolTable));
+            }
+            while (this.accept("SEMICOLON")) {}
+            cases.push({ values, body });
+        }
+        let otherwise = [];
+        if (this.peek().type === "OTHERWISE_KEYWORD") {
+            this.expect("OTHERWISE_KEYWORD");
+            while (!["END_KEYWORD", "EOF"].includes(this.peek().type)) {
+                otherwise.push(this.parseStatementWithSymbols(symbolTable));
+            }
+            while (this.accept("SEMICOLON")) {}
+        }
+        this.expect("END_KEYWORD");
+        this.accept("SEMICOLON");
+        return { type: "SwitchStatement", discriminant, cases, otherwise };
     }
 
     parseAssignmentExpr(symbolTable) {

@@ -13,4 +13,12 @@ begin
     begin
         n = n - 1;
     end;
+    switch n of
+    case 0:
+        n = 1;
+    case 1:
+        n = 2;
+    otherwise
+        n = 3;
+    end;
 end;
