@@ -39,6 +39,7 @@ let currentFunctionName = null;
 function genBlock(block, paramNames = []) {
     let declared = new Set(paramNames);
     let code = [];
+    let openLabel = null;
     for (const stmt of block.statements) {
         if (stmt.type === "VarDeclaration") {
             for (const name of stmt.names) {
@@ -65,9 +66,14 @@ function genBlock(block, paramNames = []) {
         } else if (stmt.type === "ExpressionStatement") {
             code.push(`${genExpr(stmt.expr)};`);
         } else if (stmt.type === "LabelStatement") {
-            code.push(`// label: ${stmt.label}`);
+            if (openLabel) {
+                code.push(`break;`);
+                code.push(`}`);
+            }
+            code.push(`'${stmt.label}: loop {`);
+            openLabel = stmt.label;
         } else if (stmt.type === "GotoStatement") {
-            code.push(`// goto ${stmt.label}`);
+            code.push(`continue '${stmt.label};`);
         } else if (stmt.type === "IfStatement") {
             const cond = genExpr(stmt.condition);
             const thenCode = indent(genBlock(stmt.consequent));
@@ -112,6 +118,10 @@ function genBlock(block, paramNames = []) {
         } else {
             code.push(`/* Unhandled statement: ${stmt.type} */`);
         }
+    }
+    if (openLabel) {
+        code.push(`break;`);
+        code.push(`}`);
     }
     return code.join("\n");
 }

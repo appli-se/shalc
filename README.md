@@ -68,8 +68,9 @@ Rust `match` expressions.
 
 ### Labels and Goto
 
-Simple labels (`label:`) and `goto` statements are recognized by the parser.
-In the generated Rust code they currently appear as comments.
+Simple labels (`label:`) and `goto` statements are translated to Rust labelled
+loops. A `goto` that jumps back to a previously defined label becomes a
+`continue` to that loop.
 
 ### Async Procedure Calls
 
