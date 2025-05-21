@@ -54,6 +54,10 @@ function genBlock(block, paramNames = []) {
             }
         } else if (stmt.type === "ExpressionStatement") {
             code.push(`${genExpr(stmt.expr)};`);
+        } else if (stmt.type === "LabelStatement") {
+            code.push(`// label: ${stmt.label}`);
+        } else if (stmt.type === "GotoStatement") {
+            code.push(`// goto ${stmt.label}`);
         } else if (stmt.type === "IfStatement") {
             const cond = genExpr(stmt.condition);
             const thenCode = indent(genBlock(stmt.consequent));

@@ -43,3 +43,8 @@ exists in the record.
 
 Switch statements following the HAL syntax are supported and are translated into
 Rust `match` expressions.
+
+### Labels and Goto
+
+Simple labels (`label:`) and `goto` statements are recognized by the parser.
+In the generated Rust code they currently appear as comments.
