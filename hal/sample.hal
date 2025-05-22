@@ -3,7 +3,8 @@ function integer foo(integer x, integer y)
 begin
     integer z;
     z = (x + y);
-    return z;
+    foo = z;
+    return;
 end;
 
 procedure bar(integer a)
