@@ -223,6 +223,11 @@ function genExpr(expr) {
                     const len = genExpr(expr.args[2]);
                     return `${s}[(${start}) as usize..(${start} + ${len}) as usize].to_string()`;
                 }
+                case "logtext": {
+                    const indentArg = genExpr(expr.args[0]);
+                    const textArg = genExpr(expr.args[1]);
+                    return `println!("{}{}", " ".repeat(${indentArg} as usize), ${textArg})`;
+                }
                 default:
                     return `${expr.callee}(${expr.args.map(a => genExpr(a)).join(", ")})`;
             }
