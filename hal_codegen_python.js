@@ -157,7 +157,11 @@ function genExpr(expr) {
         case 'BooleanLiteral':  return expr.value ? 'True' : 'False';
         case 'BinaryExpression':
             if (expr.operator === 'AMPERSAND') {
-                return `${genExpr(expr.left)} + ${genExpr(expr.right)}`;
+                const leftExpr = genExpr(expr.left);
+                const rightExpr = genExpr(expr.right);
+                const left = expr.left.type === 'StringLiteral' ? leftExpr : `str(${leftExpr})`;
+                const right = expr.right.type === 'StringLiteral' ? rightExpr : `str(${rightExpr})`;
+                return `${left} + ${right}`;
             }
             return `${genExpr(expr.left)} ${opPython(expr.operator)} ${genExpr(expr.right)}`;
         case 'UnaryExpression':
