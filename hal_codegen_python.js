@@ -163,7 +163,15 @@ function genExpr(expr) {
         case 'UnaryExpression':
             return `${opPython(expr.operator)}${genExpr(expr.argument)}`;
         case 'CallExpression':
-            return `${expr.callee}(${expr.args.map(a => genExpr(a)).join(', ')})`;
+            switch (expr.callee.toLowerCase()) {
+                case 'logtext': {
+                    const indentArg = genExpr(expr.args[0]);
+                    const textArg = genExpr(expr.args[1]);
+                    return `print(' ' * (${indentArg}) + ${textArg})`;
+                }
+                default:
+                    return `${expr.callee}(${expr.args.map(a => genExpr(a)).join(', ')})`;
+            }
         case 'MemberExpression':
             return `${genExpr(expr.object)}.${expr.property}`;
         case 'IndexExpression':

@@ -85,3 +85,8 @@ clientremoteasync.MyProc(1);
 ```
 
 is parsed and emitted as a commented placeholder in the generated Rust code.
+
+### LogText Primitive
+
+The built-in procedure `LogText(integer indent, string logtext)` prints debug
+information. It outputs `indent` spaces followed by the text to the console.
