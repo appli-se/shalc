@@ -3,11 +3,15 @@ function integer foo(integer x, integer y)
 begin
     integer z;
     z = (x + y);
-    return z;
+    foo = z;
+    return;
 end;
 
 procedure bar(integer a)
 begin
-    integer b;
+    integer b,z;
     b = a + 1;
+    z = foo(b,5);
+    LogText(2,"Result z = " & z);
+    return;
 end;
