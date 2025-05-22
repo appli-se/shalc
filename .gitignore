@@ -1,2 +1,2 @@
 # Ignore generated Rust files
-hal/*.rs
+hal/*.py
