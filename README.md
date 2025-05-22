@@ -1,6 +1,6 @@
 # shalc
 
-A small experiment implementing a HAL (Hypothetical Assembly Language) parser and a simple Rust code generator.
+A small experiment implementing a HAL (Hypothetical Assembly Language) parser and a simple JavaScript code generator.
 
 ## Usage
 
@@ -13,12 +13,12 @@ A small experiment implementing a HAL (Hypothetical Assembly Language) parser an
 node shalc.js hal/sample.hal
 ```
 
-This command writes a Rust file next to the input with the `.rs` extension (for the sample above, `hal/sample.rs`).
+This command writes a JavaScript file next to the input with the `.js` extension (for the sample above, `hal/sample.js`).
 
 ## Sample
 
 The provided `sample.hal` contains a global function `foo` and a procedure `bar`.
-After running the command above you will find `sample.rs` with the generated Rust code.
+After running the command above you will find `sample.js` with the generated JavaScript code.
 
 ### Record Variables
 
@@ -28,12 +28,10 @@ The compiler understands simple `record` variable declarations such as:
 record A a;
 ```
 
-This will result in Rust code using the corresponding struct from a `datadef`
-module and initializing the variable with `Default::default()`:
+This will result in JavaScript code using a plain object initialized to `{}`:
 
 ```
-use datadef::A;
-let mut a: A = Default::default();
+let a = {};
 ```
 
 Field accesses like `a.foo` are allowed without validating whether the field
@@ -47,8 +45,8 @@ exists in the record.
 row A r;
 ```
 
-This currently generates the same Rust code as a `record` variable and simply
-initializes the struct with `Default::default()`.
+This currently generates the same JavaScript code as a `record` variable and simply
+initializes the object with `{}`.
 
 ### Array Variables
 
@@ -58,19 +56,19 @@ Array variables can be declared using the `array` keyword:
 array integer nums;
 ```
 
-Indexing expressions like `nums[0]` are supported and translated to Rust vector
-syntax. Array variables become `Vec` types in the generated Rust code.
+Indexing expressions like `nums[0]` are supported and translated to JavaScript array
+syntax. Array variables become regular arrays in the generated JavaScript code.
 
 ### Switch Statements
 
 Switch statements following the HAL syntax are supported and are translated into
-Rust `match` expressions.
+JavaScript `switch` statements.
 
 ### Labels and Goto
 
-Simple labels (`label:`) and `goto` statements are translated to Rust labelled
-loops. A `goto` that jumps back to a previously defined label becomes a
-`continue` to that loop.
+Simple labels (`label:`) and `goto` statements are translated using a simple
+state machine with labelled loops in JavaScript. A `goto` that jumps back to a
+previously defined label becomes a `continue` to that loop.
 
 ### Async Procedure Calls
 
@@ -82,4 +80,4 @@ A call like
 clientremoteasync.MyProc(1);
 ```
 
-is parsed and emitted as a commented placeholder in the generated Rust code.
+is parsed and emitted as a commented placeholder in the generated JavaScript code.
