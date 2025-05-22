@@ -1,12 +1,14 @@
 // hal_codegen_js.js
 
+const { hasLabelOrGoto } = require('./hal_opt');
+
 function genJS(ast, builtins = []) {
     const out = [];
     for (const item of ast.items) {
         if (item.type === 'Function') {
-            out.push(genFunction(item));
+            out.push(hasLabelOrGoto(item.body) ? genFunction(item) : genSimpleFunction(item));
         } else if (item.type === 'Procedure') {
-            out.push(genProcedure(item));
+            out.push(hasLabelOrGoto(item.body) ? genProcedure(item) : genSimpleProcedure(item));
         } else if (item.type === 'ExternalFunction' || item.type === 'ExternalProcedure') {
             out.push(`// external ${item.type === 'ExternalFunction' ? 'function' : 'procedure'} ${item.name}`);
         }
@@ -158,6 +160,20 @@ function genProcedure(proc) {
     lines.push(indent(matchCode));
     lines.push('}');
     return `function ${proc.name}(${params}) {\n${indent(lines.join('\n'))}\n}`;
+}
+
+function genSimpleFunction(fn) {
+    const params = fn.params.map(p => p.name).join(', ');
+    currentFunctionName = null;
+    const body = genBlock(fn.body, fn.params.map(p => p.name), null);
+    return `function ${fn.name}(${params}) {\n${indent(body)}\n}`;
+}
+
+function genSimpleProcedure(proc) {
+    const params = proc.params.map(p => p.name).join(', ');
+    currentFunctionName = null;
+    const body = genBlock(proc.body, proc.params.map(p => p.name), null);
+    return `function ${proc.name}(${params}) {\n${indent(body)}\n}`;
 }
 
 function genExpr(expr) {
