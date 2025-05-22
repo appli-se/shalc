@@ -1,7 +1,18 @@
 // hal_codegen.js
 
-function genRust(ast) {
+function genRust(ast, builtins = []) {
     let out = ["mod hal { type RoundMode = (); }"];
+
+    if (builtins.length > 0) {
+        const names = Array.from(new Set(
+            builtins
+                .filter(b => b.type === "ExternalFunction" || b.type === "ExternalProcedure")
+                .map(b => b.name)
+        ));
+        if (names.length > 0) {
+            out.push(names.map(n => `use builtin::${n};`).join("\n"));
+        }
+    }
     for (const item of ast.items) {
         if (item.type === "Function") {
             out.push(genFunction(item));

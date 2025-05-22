@@ -30,10 +30,12 @@ try {
 }
 
 let ast;
+let builtinItems = [];
 try {
     const { ast: builtins, functionTable } = parse(builtinCode);
     const { ast: userAst } = parse(code, functionTable);
     ast = { type: 'Program', items: [...builtins.items, ...userAst.items] };
+    builtinItems = builtins.items;
 } catch (e) {
     if (e instanceof ParseError) {
         console.error(e.message);
@@ -43,7 +45,7 @@ try {
     }
 }
 
-const rust = genRust(ast) + "\n";
+const rust = genRust(ast, builtinItems) + "\n";
 const outPath = path.join(
     path.dirname(inputPath),
     path.basename(inputPath, '.hal') + '.rs'
