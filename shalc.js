@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { parse, ParseError } = require('./hal_parser');
 const { genJS } = require('./hal_codegen_js');
+const { removeDeadCode } = require('./hal_opt');
 
 function usage() {
     console.error('Usage: node shalc.js <file.hal>');
@@ -35,6 +36,7 @@ try {
     const { ast: builtins, functionTable } = parse(builtinCode);
     const { ast: userAst } = parse(code, functionTable);
     ast = { type: 'Program', items: [...builtins.items, ...userAst.items] };
+    ast = removeDeadCode(ast);
     builtinItems = builtins.items;
 } catch (e) {
     if (e instanceof ParseError) {
@@ -45,7 +47,7 @@ try {
     }
 }
 
-const js = genJS(ast, builtinItems) + "\n";
+const js = genJS(ast, []) + "\n";
 const outPath = path.join(
     path.dirname(inputPath),
     path.basename(inputPath, '.hal') + '.js'
