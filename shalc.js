@@ -2,13 +2,21 @@ const fs = require('fs');
 const path = require('path');
 const { parse, ParseError } = require('./hal_parser');
 const { genRust } = require('./hal_codegen_rust');
+const { genPython } = require('./hal_codegen_python');
 
 function usage() {
-    console.error('Usage: node shalc.js <file.hal>');
+    console.error('Usage: node shalc.js [--python] <file.hal>');
     process.exit(1);
 }
 
-const inputPath = process.argv[2];
+let target = 'rust';
+let inputPath;
+if (process.argv[2] === '--python') {
+    target = 'python';
+    inputPath = process.argv[3];
+} else {
+    inputPath = process.argv[2];
+}
 if (!inputPath || !inputPath.endsWith('.hal')) {
     usage();
 }
@@ -45,14 +53,14 @@ try {
     }
 }
 
-const rust = genRust(ast, builtinItems) + "\n";
+const output = (target === 'python' ? genPython(ast, builtinItems) : genRust(ast, builtinItems)) + "\n";
 const outPath = path.join(
     path.dirname(inputPath),
-    path.basename(inputPath, '.hal') + '.rs'
+    path.basename(inputPath, '.hal') + (target === 'python' ? '.py' : '.rs')
 );
 
 try {
-    fs.writeFileSync(outPath, rust);
+    fs.writeFileSync(outPath, output);
     console.log(`Written ${outPath}`);
 } catch (e) {
     console.error(`Failed to write output: ${outPath}`);
