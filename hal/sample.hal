@@ -6,6 +6,12 @@ begin
     return z;
 end;
 
+global
+function integer foo(integer x, integer y)
+begin
+    return x+y;
+end;
+
 procedure bar(integer a)
 begin
     integer b;
