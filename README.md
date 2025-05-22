@@ -1,6 +1,6 @@
 # shalc
 
-A small experiment implementing a HAL (Hypothetical Assembly Language) parser and a simple Rust code generator.
+A small experiment implementing a HAL (Hypothetical Assembly Language) parser and a simple Python code generator.
 
 ## Usage
 
@@ -13,12 +13,12 @@ A small experiment implementing a HAL (Hypothetical Assembly Language) parser an
 node shalc.js hal/sample.hal
 ```
 
-This command writes a Rust file next to the input with the `.rs` extension (for the sample above, `hal/sample.rs`).
+This command writes a Python file next to the input with the `.py` extension (for the sample above, `hal/sample.py`).
 
 ## Sample
 
 The provided `sample.hal` contains a global function `foo` and a procedure `bar`.
-After running the command above you will find `sample.rs` with the generated Rust code.
+After running the command above you will find `sample.py` with the generated Python code.
 
 ### Record Variables
 
@@ -28,12 +28,12 @@ The compiler understands simple `record` variable declarations such as:
 record A a;
 ```
 
-This will result in Rust code using the corresponding struct from a `datadef`
-module and initializing the variable with `Default::default()`:
+This will result in Python code initializing the variable using the `datadef`
+module:
 
 ```
-use datadef::A;
-let mut a: A = Default::default();
+from datadef import A
+a = A()
 ```
 
 Field accesses like `a.foo` are allowed without validating whether the field
@@ -47,8 +47,8 @@ exists in the record.
 row A r;
 ```
 
-This currently generates the same Rust code as a `record` variable and simply
-initializes the struct with `Default::default()`.
+This currently generates the same Python code as a `record` variable and simply
+creates a new instance of the struct.
 
 ### Array Variables
 
@@ -58,19 +58,19 @@ Array variables can be declared using the `array` keyword:
 array integer nums;
 ```
 
-Indexing expressions like `nums[0]` are supported and translated to Rust vector
-syntax. Array variables become `Vec` types in the generated Rust code.
+Indexing expressions like `nums[0]` are supported and translated to Python list
+syntax. Array variables become `list` types in the generated Python code.
 
 ### Switch Statements
 
 Switch statements following the HAL syntax are supported and are translated into
-Rust `match` expressions.
+Python `if`/`elif` chains.
 
 ### Labels and Goto
 
-Simple labels (`label:`) and `goto` statements are translated to Rust labelled
-loops. A `goto` that jumps back to a previously defined label becomes a
-`continue` to that loop.
+Simple labels (`label:`) and `goto` statements are implemented using a loop with
+a program counter variable. A `goto` that jumps back to a previously defined
+label becomes a `continue` to that loop.
 
 ### Async Procedure Calls
 
@@ -82,4 +82,4 @@ A call like
 clientremoteasync.MyProc(1);
 ```
 
-is parsed and emitted as a commented placeholder in the generated Rust code.
+is parsed and emitted as a commented placeholder in the generated Python code.
