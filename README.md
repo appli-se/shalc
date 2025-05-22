@@ -1,19 +1,21 @@
 # shalc
 
-A small experiment implementing a HAL (Hypothetical Assembly Language) parser and a simple Rust code generator.
+A small experiment implementing a HAL (Hypothetical Assembly Language) parser and simple code generators for Rust and Python.
 
 ## Usage
 
 1. Place your `.hal` source files anywhere in the project. A sample file is provided at `hal/sample.hal`.
    Another file `hal/sample_external.hal` demonstrates declarations of external
    functions and procedures.
-2. Run the compiler with Node.js, passing the path to the `.hal` file:
+2. Run the compiler with Node.js, passing the path to the `.hal` file. Use `--python` to generate Python instead of Rust:
 
 ```bash
 node shalc.js hal/sample.hal
+node shalc.js --python hal/sample.hal
 ```
 
-This command writes a Rust file next to the input with the `.rs` extension (for the sample above, `hal/sample.rs`).
+The first command writes a Rust file next to the input with the `.rs` extension (for the sample above, `hal/sample.rs`).
+When using `--python` the output file receives the `.py` extension.
 
 ## Sample
 
