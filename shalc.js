@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { parse, ParseError } = require('./hal_parser');
-const { genRust } = require('./hal_codegen_rust');
+const { genJS } = require('./hal_codegen_js');
 
 function usage() {
     console.error('Usage: node shalc.js <file.hal>');
@@ -45,14 +45,14 @@ try {
     }
 }
 
-const rust = genRust(ast, builtinItems) + "\n";
+const js = genJS(ast, builtinItems) + "\n";
 const outPath = path.join(
     path.dirname(inputPath),
-    path.basename(inputPath, '.hal') + '.rs'
+    path.basename(inputPath, '.hal') + '.js'
 );
 
 try {
-    fs.writeFileSync(outPath, rust);
+    fs.writeFileSync(outPath, js);
     console.log(`Written ${outPath}`);
 } catch (e) {
     console.error(`Failed to write output: ${outPath}`);
